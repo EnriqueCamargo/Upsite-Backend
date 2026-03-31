@@ -1,0 +1,17 @@
+# Seguridad
+.env
+
+# Compilación y Build
+/build/
+.gradle/
+out/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Archivos del Sistema
+.DS_Store
+Thumbs.db

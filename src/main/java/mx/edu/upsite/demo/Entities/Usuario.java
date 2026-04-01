@@ -44,17 +44,18 @@ public class Usuario {
 
     @Enumerated(EnumType.STRING)
     @Column(name="rol",nullable = false)
-    private Rol rol;
+    private Rol rol=Rol.ESTUDIANTE;
 
-    @Column(name="id_grupo")
-    private Integer idGrupo;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_grupo")
+    private Grupo grupo;
 
     @Column(name = "status")
     private Integer status = 1;
 
     @CreationTimestamp //Genera la fecha por default
     @Column(name = "fecha_creacion", updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaCreacion=OffsetDateTime.now();
 
     @UpdateTimestamp
     @Column(name = "ultimo_acceso")

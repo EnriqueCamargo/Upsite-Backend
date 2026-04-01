@@ -61,7 +61,7 @@ public class Usuario {
     @Column(name = "ultimo_acceso")
     private OffsetDateTime ultimoAcceso;
 
-    @Column(name = "ultimo_ip")
+    @Column(name = "ultimo_ip", columnDefinition = "inet")
     private String ultimoIp; // El tipo INET de Postgres se mapea como String en Java
 
     @Column(name = "fecha_eliminacion")

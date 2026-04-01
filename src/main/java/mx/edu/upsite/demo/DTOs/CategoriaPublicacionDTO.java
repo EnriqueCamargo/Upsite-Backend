@@ -1,0 +1,4 @@
+package mx.edu.upsite.demo.DTOs;
+
+public class CategoriaPublicacionDTO {
+}

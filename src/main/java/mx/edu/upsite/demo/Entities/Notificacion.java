@@ -36,7 +36,7 @@ public class Notificacion {
     @JoinColumn(name = "ref_publicacion")
     private Publicacion publicacion;
 
-   
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ref_comentario")
     private Comentario comentario;

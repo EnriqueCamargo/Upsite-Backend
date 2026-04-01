@@ -1,4 +1,8 @@
 package mx.edu.upsite.demo.Enums;
 
 public enum Rol {
+    ADMIN,
+    DIRECTIVO,
+    DOCENTE,
+    ESTUDIANTE
 }

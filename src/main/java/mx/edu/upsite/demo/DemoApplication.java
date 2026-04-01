@@ -12,6 +12,6 @@ public class DemoApplication {
 		SpringApplication.run(DemoApplication.class, args);
 		System.out.println("sistema iniciado");
 
-		//FINALIZACION DE MAPEO DE ENTIDADES
+		//FINALIZACION DE MAPEO DE ENTIDADES 
 	}
 	}

@@ -1,4 +1,7 @@
 package mx.edu.upsite.demo.Repositories;
 
-public interface PublicacionRepository {
+import mx.edu.upsite.demo.Entities.Publicacion;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PublicacionRepository extends JpaRepository<Publicacion, Integer> {
 }

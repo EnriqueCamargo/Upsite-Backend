@@ -1,4 +1,6 @@
 package mx.edu.upsite.demo.DTOs;
 
-public class CarreraDTO {
-}
+public record CarreraDTO(
+        Integer idCarrera,
+        String nombre
+) {}

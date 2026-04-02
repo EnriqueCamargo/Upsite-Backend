@@ -1,4 +1,13 @@
 package mx.edu.upsite.demo.DTOs;
 
-public class ComentarioDTO {
-}
+import java.time.OffsetDateTime;
+
+public record ComentarioDTO(
+        Integer idComentario,
+        String texto,
+        OffsetDateTime fechaComentario,
+        Integer status,
+        Integer idUsuario,
+        Integer idPublicacion,
+        Integer idPadre
+) {}

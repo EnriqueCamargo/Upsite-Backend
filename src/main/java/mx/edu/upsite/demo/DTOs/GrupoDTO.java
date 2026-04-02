@@ -1,4 +1,7 @@
 package mx.edu.upsite.demo.DTOs;
 
-public class GrupoDTO {
-}
+public record GrupoDTO (
+        Integer idGrupo,
+        String nombre,
+        Integer idCarrera
+){}

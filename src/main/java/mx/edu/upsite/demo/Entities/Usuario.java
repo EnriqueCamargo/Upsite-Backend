@@ -1,10 +1,7 @@
 package mx.edu.upsite.demo.Entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import mx.edu.upsite.demo.Enums.Rol;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,6 +10,7 @@ import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "usuarios")
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

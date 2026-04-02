@@ -1,6 +1,6 @@
 package mx.edu.upsite.demo.DTOs;
 
-public record ProfesorAlcance(
+public record ProfesorAlcanceDTO(
         Integer idUsuario,
         Integer idCarrera,
         Integer idGrupo

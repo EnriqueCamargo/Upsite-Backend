@@ -52,7 +52,8 @@ public class Notificacion {
     @CreationTimestamp
     @Column(name = "fecha", updatable = false)
     private OffsetDateTime fecha;
-    @Column(name = "tipo_notificacion")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo")
     private TipoNotificacion tipoNotificacion;
 
 }

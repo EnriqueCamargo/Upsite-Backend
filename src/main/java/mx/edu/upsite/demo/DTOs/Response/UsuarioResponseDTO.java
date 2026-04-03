@@ -13,7 +13,7 @@ public record UsuarioResponseDTO(
         Rol rol,
         String matricula,
         Long seguidoresCount,
-        Long siguiendoCount,  
+        Long siguiendoCount,
         Boolean loSigo
 ) {
 }

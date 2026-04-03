@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import mx.edu.upsite.demo.Enums.TipoNotificacion;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
@@ -51,5 +52,7 @@ public class Notificacion {
     @CreationTimestamp
     @Column(name = "fecha", updatable = false)
     private OffsetDateTime fecha;
+    @Column(name = "tipo_notificacion")
+    private TipoNotificacion tipoNotificacion;
 
 }

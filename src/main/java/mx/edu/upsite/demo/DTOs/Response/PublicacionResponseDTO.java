@@ -1,4 +1,14 @@
 package mx.edu.upsite.demo.DTOs.Response;
 
-public record PublicacionResponseDTO() {
+import jakarta.persistence.criteria.CriteriaBuilder;
+import mx.edu.upsite.demo.Enums.Importancia;
+
+import java.util.List;
+
+public record PublicacionResponseDTO(
+        Integer id,
+        String texto,
+        Importancia importancia,
+        List<MultimediaPublicacionResponseDTO>multimedia
+) {
 }

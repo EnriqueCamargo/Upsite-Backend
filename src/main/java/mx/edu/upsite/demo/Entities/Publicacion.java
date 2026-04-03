@@ -45,9 +45,6 @@ public class Publicacion {
     @Column(name = "target_carrera")
     private  Integer targetCarrera;
 
-    @Column(name="target_grupo")
-    private Integer targetGrupo;
-
     @Column(name="es_global")
     private Boolean esGlobal=false;
 

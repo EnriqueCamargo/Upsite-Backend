@@ -5,13 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import io.github.cdimascio.dotenv.Dotenv;
 @SpringBootApplication
 public class DemoApplication {
-
 	public static void main(String[] args) {
 		Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 		dotenv.entries().forEach(entry -> System.setProperty(entry.getKey(), entry.getValue()));
 		SpringApplication.run(DemoApplication.class, args);
 		System.out.println("sistema iniciado");
-
-		//FINALIZACION DE MAPEO DE ENTIDADES 
+		//FINALIZACION DE MAPEO DE ENTIDAD
 	}
-	}
+}

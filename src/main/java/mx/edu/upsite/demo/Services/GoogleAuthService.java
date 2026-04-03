@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Rol;
 import mx.edu.upsite.demo.Repositories.UsuarioRepository;
+import mx.edu.upsite.demo.Security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,7 @@ public class GoogleAuthService {
     private String clientId;
 
     private final UsuarioRepository usuarioRepository;
-    private final JwtService jwtService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public String loginWithGoogle(String googleToken) throws Exception {
         // Verificar el token con Google
@@ -50,15 +51,12 @@ public class GoogleAuthService {
         String cuerpoEmail=email.split("@")[0];
         String inicialEmail=cuerpoEmail.substring(0,1).toLowerCase();
         String restoEmail=cuerpoEmail.substring(1).toLowerCase();
-
         //formato de los nombres para el email
         String inicialNombre= nombres.substring(0,1).toLowerCase();
         String primerApellido = (apellidos != null && !apellidos.isEmpty())
                 ? apellidos.split(" ")[0].toLowerCase()
                 : null;
-
-
-
+        
         // Buscar o crear el usuario
         Usuario usuario = usuarioRepository.findByGoogleId(googleId)
                 .orElseGet(() -> {
@@ -74,6 +72,6 @@ public class GoogleAuthService {
                 });
 
         // Generar y devolver JWT propio
-        return jwtService.generateToken(usuario);
+        return jwtTokenProvider.generateToken(usuario);
     }
 }

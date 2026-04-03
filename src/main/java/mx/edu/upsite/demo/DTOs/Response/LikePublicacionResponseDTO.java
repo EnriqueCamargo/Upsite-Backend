@@ -1,4 +1,12 @@
 package mx.edu.upsite.demo.DTOs.Response;
 
-public record LikePublicacionResponseDTO() {
+import java.time.OffsetDateTime;
+
+public record LikePublicacionResponseDTO(
+        Integer idPublicacion,
+        String nombreUsuario,
+        String fotoUsuario,
+        String matricula,
+        OffsetDateTime fecha
+) {
 }

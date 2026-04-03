@@ -64,4 +64,7 @@ public class Usuario {
 
     @Column(name = "fecha_eliminacion")
     private OffsetDateTime fechaEliminacion;
+
+    @Column(name = "password", nullable = false)
+    private String password;
 }

@@ -1,8 +1,11 @@
 package mx.edu.upsite.demo.DTOs.Request;
 
-public record MultimediaPublicacionRequestDTO(
-        Integer idUsuario,
-        Integer idPublicacion
+import mx.edu.upsite.demo.Enums.TipoMultimedia;
 
+public record MultimediaPublicacionRequestDTO(
+    Integer id,
+    String ruta,
+    TipoMultimedia tipoMultimedia,
+    Integer idPublicacion
 ) {
 }

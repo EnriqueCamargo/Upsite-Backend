@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
@@ -67,4 +69,17 @@ public class Usuario {
 
     @Column(name = "password", nullable = false)
     private String password;
+
+    // Estos son mis FANS (los que me siguen a mí)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "seguidores",
+            joinColumns = @JoinColumn(name = "id_seguido"), // Yo soy el seguido
+            inverseJoinColumns = @JoinColumn(name = "id_seguidor") // Ellos son los seguidores
+    )
+    private List<Usuario> seguidores = new ArrayList<>();
+
+    // Estos son mis ÍDOLOS (a los que yo sigo)
+    @ManyToMany(mappedBy = "seguidores")
+    private List<Usuario> siguiendo = new ArrayList<>();
 }

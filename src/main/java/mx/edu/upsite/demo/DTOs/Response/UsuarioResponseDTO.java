@@ -11,6 +11,9 @@ public record UsuarioResponseDTO(
         String fotoPerfil,
         String email,
         Rol rol,
-        String matricula
+        String matricula,
+        Long seguidoresCount,
+        Long siguiendoCount,  
+        Boolean loSigo
 ) {
 }

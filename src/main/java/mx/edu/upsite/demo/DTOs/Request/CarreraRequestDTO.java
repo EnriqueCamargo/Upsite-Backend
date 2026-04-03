@@ -1,4 +1,6 @@
 package mx.edu.upsite.demo.DTOs.Request;
 
-public record CarreraRequestDTO() {
+public record CarreraRequestDTO(
+        String nombre
+) {
 }

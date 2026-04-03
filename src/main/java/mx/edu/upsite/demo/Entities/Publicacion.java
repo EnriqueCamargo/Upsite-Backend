@@ -10,6 +10,8 @@ import mx.edu.upsite.demo.Enums.Moderacion;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -58,6 +60,14 @@ public class Publicacion {
     @Column(name = "fecha_eliminacion")
     private OffsetDateTime fechaEliminacion;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "publicaciones_grupos", // Nombre de la tabla física en DB
+            joinColumns = @JoinColumn(name = "id_publicacion"), // FK a esta entidad
+            inverseJoinColumns = @JoinColumn(name = "id_grupo")  // FK a la entidad Grupo
+    )
+    private List<Grupo> gruposDestino = new ArrayList<>();
 
-
+    @OneToMany(mappedBy = "publicacion", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MultimediaPublicacion> multimedia = new ArrayList<>();
 }

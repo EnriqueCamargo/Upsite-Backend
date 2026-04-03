@@ -6,11 +6,13 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import lombok.RequiredArgsConstructor;
 import mx.edu.upsite.demo.Entities.Usuario;
+import mx.edu.upsite.demo.Enums.Rol;
 import mx.edu.upsite.demo.Repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +44,21 @@ public class GoogleAuthService {
         String apellidos = (String) payload.get("family_name");
         String fotoPerfil = (String) payload.get("picture");
 
+
+
+        //Separa las partes del cuerpo del email
+        String cuerpoEmail=email.split("@")[0];
+        String inicialEmail=cuerpoEmail.substring(0,1).toLowerCase();
+        String restoEmail=cuerpoEmail.substring(1).toLowerCase();
+
+        //formato de los nombres para el email
+        String inicialNombre= nombres.substring(0,1).toLowerCase();
+        String primerApellido = (apellidos != null && !apellidos.isEmpty())
+                ? apellidos.split(" ")[0].toLowerCase()
+                : null;
+
+
+
         // Buscar o crear el usuario
         Usuario usuario = usuarioRepository.findByGoogleId(googleId)
                 .orElseGet(() -> {
@@ -51,6 +68,8 @@ public class GoogleAuthService {
                     nuevo.setNombres(nombres);
                     nuevo.setApellidos(apellidos);
                     nuevo.setFotoPerfil(fotoPerfil);
+                    if (cuerpoEmail.matches("\\d+")) nuevo.setRol(Rol.ESTUDIANTE);
+                    else if(inicialEmail==inicialNombre && restoEmail==primerApellido) nuevo.setRol(Rol.DOCENTE);
                     return usuarioRepository.save(nuevo);
                 });
 

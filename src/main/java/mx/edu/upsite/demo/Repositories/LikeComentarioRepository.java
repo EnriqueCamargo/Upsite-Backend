@@ -1,4 +1,9 @@
 package mx.edu.upsite.demo.Repositories;
 
-public interface LikeComentarioRepository {
+import mx.edu.upsite.demo.Entities.LikeComentario;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface LikeComentarioRepository extends JpaRepository<LikeComentario,Integer> {
 }

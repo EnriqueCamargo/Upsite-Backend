@@ -34,11 +34,11 @@ public class Publicacion {
     private String texto;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "importancia")
+    @Column(name = "importancia", columnDefinition = "enum_importancia")
     private Importancia importancia=Importancia.PUBLICACION;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "moderacion")
+    @Column(name = "moderacion", columnDefinition = "enum_moderacion")
     private Moderacion moderacion=Moderacion.PENDIENTE;
 
     @Column(name = "feedback_ia",columnDefinition = "TEXT")

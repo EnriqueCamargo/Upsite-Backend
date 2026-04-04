@@ -26,6 +26,7 @@ public class GoogleAuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     public String loginWithGoogle(String googleToken) throws Exception {
+        System.out.println("Token recibido: " + googleToken);
         // Verificar el token con Google
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(), new GsonFactory())
@@ -57,6 +58,8 @@ public class GoogleAuthService {
                 ? apellidos.split(" ")[0].toLowerCase()
                 : null;
 
+
+
         // Buscar o crear el usuario
         Usuario usuario = usuarioRepository.findByGoogleId(googleId)
                 .orElseGet(() -> {
@@ -66,8 +69,8 @@ public class GoogleAuthService {
                     nuevo.setNombres(nombres);
                     nuevo.setApellidos(apellidos);
                     nuevo.setFotoPerfil(fotoPerfil);
-                    if (cuerpoEmail.matches("\\d+")) nuevo.setRol(Rol.ESTUDIANTE);
-                    else if(inicialEmail==inicialNombre && restoEmail==primerApellido) nuevo.setRol(Rol.DOCENTE);
+                    if (cuerpoEmail.matches("\\d+")){ nuevo.setRol(Rol.ESTUDIANTE); nuevo.setMatricula(cuerpoEmail);}
+                    else if(inicialEmail.equals(inicialNombre) && restoEmail.equals(primerApellido)) nuevo.setRol(Rol.DOCENTE);
                     return usuarioRepository.save(nuevo);
                 });
 

@@ -3,8 +3,11 @@ package mx.edu.upsite.demo.Entities;
 import jakarta.persistence.*;
 import lombok.*;
 import mx.edu.upsite.demo.Enums.Rol;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -43,7 +46,8 @@ public class Usuario {
     private String fotoPerfil;
 
     @Enumerated(EnumType.STRING)
-    @Column(name="rol",nullable = false)
+    @Column(name = "rol", nullable = false, columnDefinition = "enum_rol")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private Rol rol=Rol.ESTUDIANTE;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -62,6 +66,7 @@ public class Usuario {
     private OffsetDateTime ultimoAcceso;
 
     @Column(name = "ultimo_ip", columnDefinition = "inet")
+    @ColumnTransformer(write = "?::inet")
     private String ultimoIp; // El tipo INET de Postgres se mapea como String en Java
 
     @Column(name = "fecha_eliminacion")

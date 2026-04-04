@@ -24,7 +24,7 @@ public class MultimediaPublicacion {
     private String ruta;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false)
+    @Column(name = "tipo", columnDefinition = "enum_multimedia")
     private TipoMultimedia tipo;
 
     @ManyToOne(fetch = FetchType.LAZY)

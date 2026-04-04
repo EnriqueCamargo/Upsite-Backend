@@ -56,7 +56,7 @@ public class GoogleAuthService {
         String primerApellido = (apellidos != null && !apellidos.isEmpty())
                 ? apellidos.split(" ")[0].toLowerCase()
                 : null;
-        
+
         // Buscar o crear el usuario
         Usuario usuario = usuarioRepository.findByGoogleId(googleId)
                 .orElseGet(() -> {

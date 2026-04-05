@@ -14,6 +14,7 @@ import mx.edu.upsite.demo.Security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -79,6 +80,18 @@ public class GoogleAuthService {
                     return usuarioRepository.save(nuevo);
                 });
 
+        // >>> AÑADIDO: Actualizar datos de perfil en cada login <<<
+        usuario.setNombres(nombres);
+        usuario.setApellidos(apellidos);
+        usuario.setFotoPerfil(fotoPerfil);
+
+        // >>> AÑADIDO: Actualizar fecha de último acceso en cada login <<<
+        // (Asegúrate de tener el campo 'ultimoAcceso' en tu entidad Usuario)
+        usuario.setUltimoAcceso(OffsetDateTime.now());
+
+        // >>> MOVIDO: El .save(usuario) ahora está fuera del orElseGet <<<
+        // Esto garantiza que el UPDATE se dispare siempre que se use el método
+        usuario = usuarioRepository.save(usuario);
         String token=jwtTokenProvider.generateToken(usuario);
         UsuarioResponseDTO usuarioResponseDTO=new UsuarioResponseDTO(
                 usuario.getId(),

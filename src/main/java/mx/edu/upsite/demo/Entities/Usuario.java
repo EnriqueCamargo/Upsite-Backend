@@ -65,15 +65,11 @@ public class Usuario {
     @Column(name = "ultimo_acceso")
     private OffsetDateTime ultimoAcceso;
 
-    @Column(name = "ultimo_ip", columnDefinition = "inet")
-    @ColumnTransformer(write = "?::inet")
-    private String ultimoIp; // El tipo INET de Postgres se mapea como String en Java
 
     @Column(name = "fecha_eliminacion")
     private OffsetDateTime fechaEliminacion;
 
-    @Column(name = "password", nullable = false)
-    private String password;
+
 
     // Estos son mis FANS (los que me siguen a mí)
     @ManyToMany(fetch = FetchType.LAZY)

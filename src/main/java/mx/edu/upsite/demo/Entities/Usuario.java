@@ -65,6 +65,15 @@ public class Usuario {
     @Column(name = "ultimo_acceso")
     private OffsetDateTime ultimoAcceso;
 
+<<<<<<< HEAD
+=======
+
+    @Column(name = "fecha_eliminacion")
+    private OffsetDateTime fechaEliminacion;
+
+
+
+>>>>>>> Enrique
     // Estos son mis FANS (los que me siguen a mí)
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

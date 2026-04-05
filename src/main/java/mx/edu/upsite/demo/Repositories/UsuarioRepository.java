@@ -18,5 +18,5 @@ public interface UsuarioRepository extends JpaRepository <Usuario, Integer> {
     List<Usuario> buscarUsuario(@Param("criterio") String criterio);
     List<Usuario> findByStatusAndGrupoId(Integer status, Integer grupoId);
     List<Usuario> findByStatusAndGrupoNombre(Integer status, String grupoNombre);
-    Optional<Usuario>findByStatus(Integer status);
+    List<Usuario>findByStatus(Integer status);
 }

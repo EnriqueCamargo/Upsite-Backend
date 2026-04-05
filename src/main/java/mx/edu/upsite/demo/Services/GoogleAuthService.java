@@ -5,6 +5,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.DTOs.Response.LoginResponseDTO;
+import mx.edu.upsite.demo.DTOs.Response.UsuarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Rol;
 import mx.edu.upsite.demo.Repositories.UsuarioRepository;
@@ -25,7 +27,7 @@ public class GoogleAuthService {
     private final UsuarioRepository usuarioRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public String loginWithGoogle(String googleToken) throws Exception {
+    public LoginResponseDTO loginWithGoogle(String googleToken) throws Exception {
         System.out.println("Token recibido: " + googleToken);
         // Verificar el token con Google
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
@@ -58,8 +60,6 @@ public class GoogleAuthService {
                 ? apellidos.split(" ")[0].toLowerCase()
                 : null;
 
-
-
         // Buscar o crear el usuario
         Usuario usuario = usuarioRepository.findByGoogleId(googleId)
                 .orElseGet(() -> {
@@ -74,7 +74,22 @@ public class GoogleAuthService {
                     return usuarioRepository.save(nuevo);
                 });
 
-        // Generar y devolver JWT propio
-        return jwtTokenProvider.generateToken(usuario);
+        String token=jwtTokenProvider.generateToken(usuario);
+        UsuarioResponseDTO usuarioResponseDTO=new UsuarioResponseDTO(
+                usuario.getId(),
+                usuario.getNombres(),
+                usuario.getApellidos(),
+                usuario.getGrupo() != null ? usuario.getGrupo().getNombre() : null,
+                usuario.getGrupo() != null && usuario.getGrupo().getCarrera() != null
+                        ? usuario.getGrupo().getCarrera().getNombre() : null,
+                usuario.getFotoPerfil(),
+                usuario.getEmail(),
+                usuario.getRol(),
+                usuario.getMatricula(),
+                null, // seguidoresCount
+                null, // siguiendoCount
+                null  // loSigo
+        );
+        return new LoginResponseDTO(token, usuarioResponseDTO);
     }
 }

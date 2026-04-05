@@ -18,12 +18,12 @@ public class AuthController {
     private final GoogleAuthService googleAuthService;
 
     @PostMapping("/google")
-    public ResponseEntity<String> loginWithGoogle(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, String>> loginWithGoogle(@RequestBody Map<String, String> body) {
         try {
             String token = googleAuthService.loginWithGoogle(body.get("token"));
-            return ResponseEntity.ok(token);
+            return ResponseEntity.ok(Map.of("token", token));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token inválido");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token inválido"));
         }
     }
 }

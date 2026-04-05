@@ -52,6 +52,7 @@ public class GoogleAuthService {
 
         //Separa las partes del cuerpo del email
         String cuerpoEmail=email.split("@")[0];
+        String dominioEmail=email.split("@")[1];
         String inicialEmail=cuerpoEmail.substring(0,1).toLowerCase();
         String restoEmail=cuerpoEmail.substring(1).toLowerCase();
         //formato de los nombres para el email
@@ -60,6 +61,10 @@ public class GoogleAuthService {
                 ? apellidos.split(" ")[0].toLowerCase()
                 : null;
 
+        //Validación de usuarios solo de UPSIN
+        if(!dominioEmail.equals("upsin.edu.mx")){
+            throw new RuntimeException("Solo se permiten Cuentas de la UPSIN");
+        }
         // Buscar o crear el usuario
         Usuario usuario = usuarioRepository.findByGoogleId(googleId)
                 .orElseGet(() -> {

@@ -65,25 +65,24 @@ public class Usuario {
     @Column(name = "ultimo_acceso")
     private OffsetDateTime ultimoAcceso;
 
-<<<<<<< HEAD
-=======
+
 
     @Column(name = "fecha_eliminacion")
     private OffsetDateTime fechaEliminacion;
 
 
 
->>>>>>> Enrique
-    // Estos son mis FANS (los que me siguen a mí)
+
+    // A QUUIÉNES SIGO YO (Mis "ídolos")
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "seguidores",
-            joinColumns = @JoinColumn(name = "id_seguido"), // Yo soy el seguido
-            inverseJoinColumns = @JoinColumn(name = "id_seguidor") // Ellos son los seguidores
+            joinColumns = @JoinColumn(name = "id_seguidor"), // Yo, el que hace la acción
+            inverseJoinColumns = @JoinColumn(name = "id_seguido") // El que recibe mi "follow"
     )
-    private List<Usuario> seguidores = new ArrayList<>();
-
-    // Estos son mis ÍDOLOS (a los que yo sigo)
-    @ManyToMany(mappedBy = "seguidores")
     private List<Usuario> siguiendo = new ArrayList<>();
+
+    // QUIÉNES ME SIGUEN A MÍ (Mis "fans")
+    @ManyToMany(mappedBy = "siguiendo")
+    private List<Usuario> seguidores = new ArrayList<>();
 }

@@ -84,14 +84,13 @@ public class GoogleAuthService {
         usuario.setApellidos(apellidos);
         usuario.setFotoPerfil(fotoPerfil);
 
-<<<<<<< HEAD
-=======
+
         // >>> AÑADIDO: Actualizar datos de perfil en cada login <<<
         usuario.setNombres(nombres);
         usuario.setApellidos(apellidos);
         usuario.setFotoPerfil(fotoPerfil);
 
->>>>>>> Enrique
+
         // >>> AÑADIDO: Actualizar fecha de último acceso en cada login <<<
         // (Asegúrate de tener el campo 'ultimoAcceso' en tu entidad Usuario)
         usuario.setUltimoAcceso(OffsetDateTime.now());

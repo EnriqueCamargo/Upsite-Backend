@@ -6,4 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface LikePublicacionRepository extends JpaRepository<LikePublicacion,Integer> {
+    boolean existsByIdIdPublicacionAndIdIdUsuario(Integer idPublicacion, Integer idUsuario);
+    void deleteByIdIdPublicacionAndIdIdUsuario(Integer idPublicacion, Integer idUsuario);
+    Long countByIdIdPublicacion(Integer idPublicacion);
 }

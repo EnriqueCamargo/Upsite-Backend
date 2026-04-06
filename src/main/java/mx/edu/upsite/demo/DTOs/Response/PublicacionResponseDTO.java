@@ -9,6 +9,10 @@ public record PublicacionResponseDTO(
         Integer id,
         String texto,
         Importancia importancia,
-        List<MultimediaPublicacionResponseDTO>multimedia
+        List<MultimediaPublicacionResponseDTO> multimedia,
+        UsuarioResponseDTO usuario,
+        Long totalLikes,
+        Long totalComentarios,
+        Boolean meGusta
 ) {
 }

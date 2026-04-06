@@ -15,3 +15,6 @@ out/
 # Archivos del Sistema
 .DS_Store
 Thumbs.db
+
+#Multimedia de prueba
+src/main/resources/static/uploads/

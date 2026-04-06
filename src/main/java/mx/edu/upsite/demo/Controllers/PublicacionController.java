@@ -1,15 +1,19 @@
 package mx.edu.upsite.demo.Controllers;
 
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Importancia;
 import mx.edu.upsite.demo.Services.LikePublicacionService;
+import mx.edu.upsite.demo.Services.MultimediaPublicacionService;
 import mx.edu.upsite.demo.Services.PublicacionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -18,6 +22,7 @@ import java.util.List;
 public class PublicacionController {
     private final PublicacionService publicacionService;
     private final LikePublicacionService likePublicacionService;
+    private final MultimediaPublicacionService multimediaPublicacionService;
 
     @GetMapping("/feed")
     public ResponseEntity<List<PublicacionResponseDTO>> getFeed(
@@ -42,5 +47,12 @@ public class PublicacionController {
                 .getContext().getAuthentication().getPrincipal();
         likePublicacionService.quitarLike(id, usuario.getId());
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/multimedia")
+    public ResponseEntity<MultimediaPublicacionResponseDTO> subirMultimedia(
+            @PathVariable Integer id,
+            @RequestParam("archivo") MultipartFile archivo) throws IOException {
+        return ResponseEntity.ok(multimediaPublicacionService.subirMultimedia(id, archivo));
     }
 }

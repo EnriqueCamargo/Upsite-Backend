@@ -6,6 +6,7 @@ import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.UsuarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Publicacion;
 import mx.edu.upsite.demo.Enums.Importancia;
+import mx.edu.upsite.demo.Repositories.ComentarioRepository;
 import mx.edu.upsite.demo.Repositories.LikePublicacionRepository;
 import mx.edu.upsite.demo.Repositories.PublicacionRepository;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class PublicacionService {
 
     private final PublicacionRepository publicacionRepository;
     private final LikePublicacionRepository likePublicacionRepository;
+    private final ComentarioRepository comentarioRepository;
 
     public List<PublicacionResponseDTO> getFeed(Integer carrera, Importancia importancia, Integer idUsuario) {
         String importanciaStr = importancia != null ? importancia.name() : null;
@@ -55,6 +57,8 @@ public class PublicacionService {
 
         Long totalLikes = likePublicacionRepository.countByIdIdPublicacion(p.getId());
         Boolean meGusta = likePublicacionRepository.existsByIdIdPublicacionAndIdIdUsuario(p.getId(), idUsuario);
+        Long totalComentarios = comentarioRepository.countByPublicacionIdAndStatus(p.getId(), 1);
+
 
         return new PublicacionResponseDTO(
                 p.getId(),
@@ -63,7 +67,7 @@ public class PublicacionService {
                 multimedia,
                 usuario,
                 totalLikes,
-                0L,
+                totalComentarios,
                 meGusta
         );
     }

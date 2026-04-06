@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mx.edu.upsite.demo.Enums.TipoMultimedia;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -25,6 +27,7 @@ public class MultimediaPublicacion {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo", columnDefinition = "enum_multimedia")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private TipoMultimedia tipo;
 
     @ManyToOne(fetch = FetchType.LAZY)

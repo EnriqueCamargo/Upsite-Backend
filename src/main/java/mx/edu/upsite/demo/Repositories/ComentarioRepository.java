@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ComentarioRespository extends JpaRepository<Comentario, Integer> {
+public interface ComentarioRepository extends JpaRepository<Comentario, Integer> {
     List<Comentario> findByPublicacionIdAndStatusAndPadreIsNull(Integer idPublicacion, Integer status);
 }

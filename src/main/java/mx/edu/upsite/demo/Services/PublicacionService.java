@@ -1,14 +1,18 @@
 package mx.edu.upsite.demo.Services;
 
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.DTOs.Request.PublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.UsuarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Publicacion;
+import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Importancia;
+import mx.edu.upsite.demo.Enums.Moderacion;
 import mx.edu.upsite.demo.Repositories.ComentarioRepository;
 import mx.edu.upsite.demo.Repositories.LikePublicacionRepository;
 import mx.edu.upsite.demo.Repositories.PublicacionRepository;
+import mx.edu.upsite.demo.Repositories.UsuarioRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +24,7 @@ public class PublicacionService {
     private final PublicacionRepository publicacionRepository;
     private final LikePublicacionRepository likePublicacionRepository;
     private final ComentarioRepository comentarioRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public List<PublicacionResponseDTO> getFeed(Integer carrera, Importancia importancia, Integer idUsuario) {
         String importanciaStr = importancia != null ? importancia.name() : null;
@@ -70,5 +75,20 @@ public class PublicacionService {
                 totalComentarios,
                 meGusta
         );
+    }
+
+    public PublicacionResponseDTO crear(PublicacionRequestDTO dto, Integer idUsuario) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Publicacion publicacion = new Publicacion();
+        publicacion.setUsuario(usuario);
+        publicacion.setTexto(dto.texto());
+        publicacion.setImportancia(dto.importancia());
+        publicacion.setEsGlobal(dto.esGlobal());
+        publicacion.setModeracion(Moderacion.PENDIENTE);
+        publicacion.setStatus(1);
+
+        return toDTO(publicacionRepository.save(publicacion), idUsuario);
     }
 }

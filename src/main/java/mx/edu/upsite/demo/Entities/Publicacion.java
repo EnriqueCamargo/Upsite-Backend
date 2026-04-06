@@ -8,6 +8,8 @@ import lombok.Setter;
 import mx.edu.upsite.demo.Enums.Importancia;
 import mx.edu.upsite.demo.Enums.Moderacion;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -35,10 +37,12 @@ public class Publicacion {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "importancia", columnDefinition = "enum_importancia")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private Importancia importancia=Importancia.PUBLICACION;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "moderacion", columnDefinition = "enum_moderacion")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     private Moderacion moderacion=Moderacion.PENDIENTE;
 
     @Column(name = "feedback_ia",columnDefinition = "TEXT")

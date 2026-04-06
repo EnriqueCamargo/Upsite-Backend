@@ -1,6 +1,7 @@
 package mx.edu.upsite.demo.Controllers;
 
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.DTOs.Request.PublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
 import mx.edu.upsite.demo.Entities.Usuario;
@@ -54,5 +55,12 @@ public class PublicacionController {
             @PathVariable Integer id,
             @RequestParam("archivo") MultipartFile archivo) throws IOException {
         return ResponseEntity.ok(multimediaPublicacionService.subirMultimedia(id, archivo));
+    }
+
+    @PostMapping
+    public ResponseEntity<PublicacionResponseDTO> crear(@RequestBody PublicacionRequestDTO dto) {
+        Usuario usuario = (Usuario) SecurityContextHolder
+                .getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(publicacionService.crear(dto, usuario.getId()));
     }
 }

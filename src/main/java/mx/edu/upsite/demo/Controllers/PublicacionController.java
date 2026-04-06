@@ -1,6 +1,7 @@
 package mx.edu.upsite.demo.Controllers;
 
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.DTOs.Request.MultimediaPublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Request.PublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
@@ -53,8 +54,8 @@ public class PublicacionController {
     @PostMapping("/{id}/multimedia")
     public ResponseEntity<MultimediaPublicacionResponseDTO> subirMultimedia(
             @PathVariable Integer id,
-            @RequestParam("archivo") MultipartFile archivo) throws IOException {
-        return ResponseEntity.ok(multimediaPublicacionService.subirMultimedia(id, archivo));
+            @RequestBody MultimediaPublicacionRequestDTO dto) {
+        return ResponseEntity.ok(multimediaPublicacionService.subirMultimedia(id, dto));
     }
 
     @PostMapping

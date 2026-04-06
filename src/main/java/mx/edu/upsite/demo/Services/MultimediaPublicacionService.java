@@ -1,6 +1,7 @@
 package mx.edu.upsite.demo.Services;
 
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.DTOs.Request.MultimediaPublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.Entities.MultimediaPublicacion;
 import mx.edu.upsite.demo.Entities.Publicacion;
@@ -20,16 +21,13 @@ public class MultimediaPublicacionService {
     private final PublicacionRepository publicacionRepository;
     private final StorageService storageService;
 
-    public MultimediaPublicacionResponseDTO subirMultimedia(Integer idPublicacion, MultipartFile archivo) throws IOException {
+    public MultimediaPublicacionResponseDTO subirMultimedia(Integer idPublicacion, MultimediaPublicacionRequestDTO dto) {
         Publicacion publicacion = publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new RuntimeException("Publicacion no encontrada"));
 
-        String ruta = storageService.guardar(archivo);
-
         MultimediaPublicacion media = new MultimediaPublicacion();
-        media.setRuta(ruta);
-        media.setTipo(archivo.getContentType().startsWith("image")
-                ? TipoMultimedia.IMAGE : TipoMultimedia.VIDEO);
+        media.setRuta(dto.ruta());
+        media.setTipo(dto.tipoMultimedia());
         media.setPublicacion(publicacion);
 
         multimediaPublicacionRepository.save(media);

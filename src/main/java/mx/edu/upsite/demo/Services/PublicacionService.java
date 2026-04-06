@@ -3,6 +3,7 @@ package mx.edu.upsite.demo.Services;
 import lombok.RequiredArgsConstructor;
 import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
+import mx.edu.upsite.demo.DTOs.Response.UsuarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Publicacion;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Importancia;
@@ -39,11 +40,31 @@ import java.util.List;
                     ))
                     .toList();
 
+            UsuarioResponseDTO usuario = new UsuarioResponseDTO(
+                    p.getUsuario().getId(),
+                    p.getUsuario().getNombres(),
+                    p.getUsuario().getApellidos(),
+                    p.getUsuario().getGrupo() != null ? p.getUsuario().getGrupo().getNombre() : null,
+                    p.getUsuario().getGrupo() != null && p.getUsuario().getGrupo().getCarrera() != null
+                            ? p.getUsuario().getGrupo().getCarrera().getNombre() : null,
+                    p.getUsuario().getFotoPerfil(),
+                    p.getUsuario().getEmail(),
+                    p.getUsuario().getRol(),
+                    p.getUsuario().getMatricula(),
+                    null,
+                    null,
+                    null
+            );
+
             return new PublicacionResponseDTO(
                     p.getId(),
                     p.getTexto(),
                     p.getImportancia(),
-                    multimedia
+                    multimedia,
+                    usuario,
+                    0L,
+                    0L,
+                    false
             );
         }
     }

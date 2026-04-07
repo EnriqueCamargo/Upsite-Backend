@@ -11,10 +11,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 @RestControllerAdvice
-public class GlobalExceptionHandler extends RuntimeException {
-    public GlobalExceptionHandler(String message) {
-        super(message);
-    }
+public class GlobalExceptionHandler {
+
 
     // 404 - Ahora usando el estándar buildResponse
     @ExceptionHandler(ResourceNotFoundException.class)

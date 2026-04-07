@@ -11,10 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-<<<<<<< HEAD
-
-=======
->>>>>>> 4e421faa04a2bb7763f86c0521f05cae18c986c2
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {

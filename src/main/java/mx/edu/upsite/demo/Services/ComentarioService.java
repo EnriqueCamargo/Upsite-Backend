@@ -29,7 +29,7 @@ public class ComentarioService {
     private final LikeComentarioRepository likeComentarioRepository;
 
     @Transactional(readOnly = true)
-    public List<ComentarioResponseDTO> getComentariosByPublicacion(Integer idPublicacion) {
+    public List<ComentarioResponseDTO> getComentariosByPublicacion(Integer idPublicacion, Integer idUsuario) {
         // 1. Blindaje de Existencia: No listamos comentarios de algo que no existe o está borrado
         if (!publicacionRepository.existsById(idPublicacion)) {
             throw new ResourceNotFoundException("No se pueden obtener comentarios: Publicación no encontrada.");
@@ -38,8 +38,9 @@ public class ComentarioService {
         return comentarioRepository
                 .findByPublicacionIdAndStatusAndPadreIsNull(idPublicacion, 1)
                 .stream()
-                .map(this::toDTO)
+                .map(c -> toDTO(c, idUsuario))
                 .toList();
+
     }
 
     @Transactional
@@ -79,7 +80,7 @@ public class ComentarioService {
         comentario.setPadre(padre);
         comentario.setStatus(1);
 
-        return toDTO(comentarioRepository.save(comentario));
+        return toDTO(comentarioRepository.save(comentario), idUsuario);
     }
 
     @Transactional
@@ -120,7 +121,10 @@ public class ComentarioService {
         likeComentarioRepository.deleteByIdIdComentarioAndIdIdUsuario(idComentario, idUsuario);
     }
 
-    private ComentarioResponseDTO toDTO(Comentario c) {
+    private ComentarioResponseDTO toDTO(Comentario c, Integer idUsuario) {
+        Long totalLikes = likeComentarioRepository.countByIdIdComentario(c.getId());
+        Boolean meGusta = likeComentarioRepository.existsByIdIdComentarioAndIdIdUsuario(c.getId(), idUsuario);
+
         // Blindaje de Nulos en el mapeo
         return new ComentarioResponseDTO(
                 c.getId(),
@@ -130,7 +134,9 @@ public class ComentarioService {
                 c.getUsuario() != null ? c.getUsuario().getFotoPerfil() : null,
                 c.getUsuario() != null ? c.getUsuario().getMatricula() : null,
                 c.getPublicacion() != null ? c.getPublicacion().getId() : null,
-                c.getPadre() != null ? c.getPadre().getId() : null
+                c.getPadre() != null ? c.getPadre().getId() : null,
+                totalLikes,
+                meGusta
         );
     }
 }

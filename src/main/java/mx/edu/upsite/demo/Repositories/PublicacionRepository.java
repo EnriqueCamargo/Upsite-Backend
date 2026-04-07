@@ -11,12 +11,16 @@ import java.util.List;
 
 @Repository
 public interface PublicacionRepository extends JpaRepository<Publicacion, Integer> {
-    @Query(value = "SELECT * FROM publicaciones p WHERE p.status = 1 AND p.es_global = true " +
+    @Query(value = "SELECT * FROM publicaciones p " +
+            "WHERE p.status = 1 " +
+            "AND p.es_global = true " +
             "AND (:carrera IS NULL OR p.target_carrera = :carrera) " +
-            "AND (CAST(:importancia AS VARCHAR) IS NULL OR p.importancia = CAST(:importancia AS enum_importancia))",
+            "AND (:importancia IS NULL OR p.importancia = CAST(:importancia AS enum_importancia))",
             nativeQuery = true)
     List<Publicacion> findFeed(
             @Param("carrera") Integer carrera,
             @Param("importancia") String importancia
     );
+
+    List<Publicacion>findByUsuarioIdAndStatus(Integer id, Integer status);
 }

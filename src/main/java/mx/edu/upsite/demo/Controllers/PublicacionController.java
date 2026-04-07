@@ -7,10 +7,12 @@ import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Importancia;
+import mx.edu.upsite.demo.Enums.TipoMultimedia;
 import mx.edu.upsite.demo.Services.LikePublicacionService;
 import mx.edu.upsite.demo.Services.MultimediaPublicacionService;
 import mx.edu.upsite.demo.Services.PublicacionService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -84,10 +86,14 @@ public class PublicacionController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/multimedia")
+    @PostMapping(value = "/{id}/multimedia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MultimediaPublicacionResponseDTO> subirMultimedia(
             @PathVariable Integer id,
-            @RequestBody MultimediaPublicacionRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(multimediaPublicacionService.subirMultimedia(id, dto));
+            @RequestParam("archivo") MultipartFile archivo,
+            @RequestParam("tipo") TipoMultimedia tipo) {
+
+        // Ahora los tipos coinciden perfectamente con el Service
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(multimediaPublicacionService.subirMultimedia(id, archivo, tipo));
     }
 }

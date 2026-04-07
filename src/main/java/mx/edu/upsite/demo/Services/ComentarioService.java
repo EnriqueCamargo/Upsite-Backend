@@ -1,17 +1,21 @@
 package mx.edu.upsite.demo.Services;
 
-import jakarta.transaction.Transactional;
+
 import lombok.RequiredArgsConstructor;
 import mx.edu.upsite.demo.DTOs.Response.ComentarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Comentario;
 import mx.edu.upsite.demo.Entities.LikeComentario;
 import mx.edu.upsite.demo.Entities.Publicacion;
 import mx.edu.upsite.demo.Entities.Usuario;
+import mx.edu.upsite.demo.Exceptions.BadRequestException;
+import mx.edu.upsite.demo.Exceptions.ConflictException;
+import mx.edu.upsite.demo.Exceptions.ResourceNotFoundException;
 import mx.edu.upsite.demo.Repositories.ComentarioRepository;
 import mx.edu.upsite.demo.Repositories.LikeComentarioRepository;
 import mx.edu.upsite.demo.Repositories.PublicacionRepository;
 import mx.edu.upsite.demo.Repositories.UsuarioRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,7 +28,13 @@ public class ComentarioService {
     private final UsuarioRepository usuarioRepository;
     private final LikeComentarioRepository likeComentarioRepository;
 
+    @Transactional(readOnly = true)
     public List<ComentarioResponseDTO> getComentariosByPublicacion(Integer idPublicacion) {
+        // 1. Blindaje de Existencia: No listamos comentarios de algo que no existe o está borrado
+        if (!publicacionRepository.existsById(idPublicacion)) {
+            throw new ResourceNotFoundException("No se pueden obtener comentarios: Publicación no encontrada.");
+        }
+
         return comentarioRepository
                 .findByPublicacionIdAndStatusAndPadreIsNull(idPublicacion, 1)
                 .stream()
@@ -32,20 +42,38 @@ public class ComentarioService {
                 .toList();
     }
 
+    @Transactional
     public ComentarioResponseDTO crear(Integer idPublicacion, Integer idUsuario, String texto, Integer idPadre) {
+        // 2. Blindaje de Publicación y Estado
         Publicacion publicacion = publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new RuntimeException("Publicacion no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("No se puede comentar: Publicación no encontrada."));
 
+        if (publicacion.getStatus() == 0) {
+            throw new BadRequestException("No se permiten nuevos comentarios en una publicación eliminada.");
+        }
+
+        // 3. Blindaje de Usuario
         Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
-        Comentario padre = idPadre != null
-                ? comentarioRepository.findById(idPadre)
-                .orElseThrow(() -> new RuntimeException("Comentario padre no encontrado"))
-                : null;
+        // 4. Blindaje de Texto
+        if (texto == null || texto.trim().isEmpty()) {
+            throw new BadRequestException("El comentario no puede estar vacío.");
+        }
+
+        // 5. Blindaje de Jerarquía (Hilos)
+        Comentario padre = null;
+        if (idPadre != null) {
+            padre = comentarioRepository.findById(idPadre)
+                    .orElseThrow(() -> new ResourceNotFoundException("El comentario al que intentas responder no existe."));
+
+            if (padre.getStatus() == 0) {
+                throw new BadRequestException("No puedes responder a un comentario eliminado.");
+            }
+        }
 
         Comentario comentario = new Comentario();
-        comentario.setTexto(texto);
+        comentario.setTexto(texto.trim());
         comentario.setUsuario(usuario);
         comentario.setPublicacion(publicacion);
         comentario.setPadre(padre);
@@ -54,20 +82,30 @@ public class ComentarioService {
         return toDTO(comentarioRepository.save(comentario));
     }
 
+    @Transactional
     public void darLike(Integer idComentario, Integer idUsuario) {
-        if (likeComentarioRepository.existsByIdIdComentarioAndIdIdUsuario(idComentario, idUsuario)) {
-            throw new RuntimeException("Ya diste like a este comentario");
+        // 6. Blindaje de Comentario: Existencia y Status
+        Comentario comentario = comentarioRepository.findById(idComentario)
+                .orElseThrow(() -> new ResourceNotFoundException("Comentario no encontrado."));
+
+        if (comentario.getStatus() == 0) {
+            throw new BadRequestException("No se puede dar like a un comentario eliminado.");
         }
 
-        Comentario comentario = comentarioRepository.findById(idComentario)
-                .orElseThrow(() -> new RuntimeException("Comentario no encontrado"));
+        // 7. Blindaje de Duplicidad
+        if (likeComentarioRepository.existsByIdIdComentarioAndIdIdUsuario(idComentario, idUsuario)) {
+            throw new ConflictException("Ya has reaccionado a este comentario.");
+        }
 
         Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
+        // 8. Creación segura de la relación de Like
         LikeComentario like = new LikeComentario();
+        // Inicializamos el ID embebido si no lo hace la entidad por defecto
         like.getId().setIdComentario(idComentario);
         like.getId().setIdUsuario(idUsuario);
+
         like.setComentario(comentario);
         like.setUsuario(usuario);
 
@@ -77,20 +115,21 @@ public class ComentarioService {
     @Transactional
     public void quitarLike(Integer idComentario, Integer idUsuario) {
         if (!likeComentarioRepository.existsByIdIdComentarioAndIdIdUsuario(idComentario, idUsuario)) {
-            throw new RuntimeException("No has dado like a este comentario");
+            throw new ResourceNotFoundException("No se encontró la reacción para eliminar.");
         }
         likeComentarioRepository.deleteByIdIdComentarioAndIdIdUsuario(idComentario, idUsuario);
     }
 
     private ComentarioResponseDTO toDTO(Comentario c) {
+        // Blindaje de Nulos en el mapeo
         return new ComentarioResponseDTO(
                 c.getId(),
                 c.getTexto(),
                 c.getFechaComentario(),
-                c.getUsuario().getNombres() + " " + c.getUsuario().getApellidos(),
-                c.getUsuario().getFotoPerfil(),
-                c.getUsuario().getMatricula(),
-                c.getPublicacion().getId(),
+                c.getUsuario() != null ? c.getUsuario().getNombres() + " " + c.getUsuario().getApellidos() : "Usuario Anónimo",
+                c.getUsuario() != null ? c.getUsuario().getFotoPerfil() : null,
+                c.getUsuario() != null ? c.getUsuario().getMatricula() : null,
+                c.getPublicacion() != null ? c.getPublicacion().getId() : null,
                 c.getPadre() != null ? c.getPadre().getId() : null
         );
     }

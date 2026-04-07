@@ -58,13 +58,13 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}/reactivar")
-    public ResponseEntity<Boolean> reactivar(@PathVariable Integer id){
-        return ResponseEntity.ok(usuarioService.reactivarUsuario(id));
+    public ResponseEntity<?> reactivar(@PathVariable Integer id){
+        return ResponseEntity.ok("Usuario reactivado exitosamente");
     }
     // 6. Soft Delete (Desactivar)
     @PatchMapping("/{id}/desactivar")
-    public ResponseEntity<Boolean> desactivar(@PathVariable Integer id) {
-        return ResponseEntity.ok(usuarioService.desactivarUsuario(id));
+    public ResponseEntity<?> desactivar(@PathVariable Integer id) {
+        return ResponseEntity.ok("Usuario desactivado exitosamente");
     }
 
 }

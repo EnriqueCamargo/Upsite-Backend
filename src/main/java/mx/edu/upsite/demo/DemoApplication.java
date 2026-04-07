@@ -10,6 +10,6 @@ public class DemoApplication {
 		dotenv.entries().forEach(entry -> System.setProperty(entry.getKey(), entry.getValue()));
 		SpringApplication.run(DemoApplication.class, args);
 		System.out.println("sistema iniciado");
-		//FINALIZACION DE MAPEO DE ENTIDAD
+		//LikesComentarios
 	}
 }

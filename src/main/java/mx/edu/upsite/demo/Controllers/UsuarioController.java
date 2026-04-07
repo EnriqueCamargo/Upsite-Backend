@@ -28,6 +28,11 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.getUsuarioById(id));
     }
 
+    @GetMapping("/eliminados")
+    public ResponseEntity<List<UsuarioResponseDTO>>getAllUsuariosEliminados(){
+        return ResponseEntity.ok(usuarioService.getAllUsuariosEliminados());
+    }
+
     // 3. El Buscador Global (Recibe el parámetro 'q')
     @GetMapping("/buscar")
     public ResponseEntity<List<UsuarioResponseDTO>> buscar(
@@ -35,10 +40,13 @@ public class UsuarioController {
             @RequestParam Integer idLogueado) { // Después lo sacaremos del JWT
         return ResponseEntity.ok(usuarioService.buscarUsuario(q, idLogueado));
     }
-
+    @GetMapping("/grupo/{grupoNombre}")
+    public ResponseEntity<List<UsuarioResponseDTO>>listarPorNombreGrupo(@PathVariable String nombreGrupo){
+        return ResponseEntity.ok(usuarioService.buscarUsuarioPorGrupo(nombreGrupo));
+    }
     // 4. Filtrar por Grupo
     @GetMapping("/grupo/{grupoId}")
-    public ResponseEntity<List<UsuarioResponseDTO>> listarPorGrupo(@PathVariable Integer grupoId) {
+    public ResponseEntity<List<UsuarioResponseDTO>> listarPorGrupoId(@PathVariable Integer grupoId) {
         return ResponseEntity.ok(usuarioService.buscarUsuarioPorGrupoId(grupoId));
     }
 
@@ -49,6 +57,10 @@ public class UsuarioController {
         return ResponseEntity.noContent().build(); // 204 No Content
     }
 
+    @PutMapping("/{id}/reactivar")
+    public ResponseEntity<Boolean> reactivar(@PathVariable Integer id){
+        return ResponseEntity.ok(usuarioService.reactivarUsuario(id));
+    }
     // 6. Soft Delete (Desactivar)
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<Boolean> desactivar(@PathVariable Integer id) {

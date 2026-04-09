@@ -96,6 +96,9 @@ public class UsuarioService {
         }
 
         usuario.setGrupo(grupo);
+        if (grupo.getCarrera() != null) {
+            usuario.setCarrera(grupo.getCarrera());
+        }
         usuarioRepository.save(usuario);
     }
 
@@ -145,7 +148,10 @@ public class UsuarioService {
                 u.getMatricula(),
                 totalSeguidores,
                 totalSiguiendo,
-                siguesAEsteUsuario
+                siguesAEsteUsuario,
+                (u.getCarrera() != null) ? u.getCarrera().getId() : 
+                    ((u.getGrupo() != null && u.getGrupo().getCarrera() != null) ? u.getGrupo().getCarrera().getId() : null),
+                (u.getGrupo() != null) ? u.getGrupo().getId() : null
         );
     }
 

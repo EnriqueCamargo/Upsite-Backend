@@ -35,9 +35,13 @@ public class PublicacionController {
     @GetMapping("/feed")
     public ResponseEntity<List<PublicacionResponseDTO>> getFeed(
             @RequestParam(required = false) Integer carrera,
-            @RequestParam(required = false) Importancia importancia) {
+            @RequestParam(required = false) Importancia importancia,
+            @RequestParam(required = false) Boolean esGlobal,
+            @RequestParam(required = false) Integer grupo,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return ResponseEntity.ok(publicacionService.getFeed(carrera, importancia, usuario.getId()));
+        return ResponseEntity.ok(publicacionService.getFeed(carrera, importancia, usuario.getId(), esGlobal, grupo, page, size));
     }
 
     @GetMapping("/autor/{idAutor}")
@@ -90,8 +94,8 @@ public class PublicacionController {
     public ResponseEntity<MultimediaPublicacionResponseDTO> subirMultimedia(
             @PathVariable Integer id,
             @RequestBody MultimediaPublicacionRequestDTO dto) {
-
+        Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(multimediaPublicacionService.subirMultimedia(id, dto));
+                .body(multimediaPublicacionService.subirMultimedia(id, dto, usuario.getId()));
     }
 }

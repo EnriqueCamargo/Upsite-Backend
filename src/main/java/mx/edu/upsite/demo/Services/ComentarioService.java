@@ -27,6 +27,7 @@ public class ComentarioService {
     private final PublicacionRepository publicacionRepository;
     private final UsuarioRepository usuarioRepository;
     private final LikeComentarioRepository likeComentarioRepository;
+    private final ModerationService moderationService;
 
     @Transactional(readOnly = true)
     public List<ComentarioResponseDTO> getComentariosByPublicacion(Integer idPublicacion, Integer idUsuario) {
@@ -60,6 +61,11 @@ public class ComentarioService {
         // 4. Blindaje de Texto
         if (texto == null || texto.trim().isEmpty()) {
             throw new BadRequestException("El comentario no puede estar vacío.");
+        }
+
+        // --- MODERACIÓN POR IA ---
+        if (!moderationService.esContenidoApropiado(texto.trim(), null)) {
+            throw new BadRequestException("Tu comentario contiene contenido inapropiado y no puede ser publicado.");
         }
 
         // 5. Blindaje de Jerarquía (Hilos)

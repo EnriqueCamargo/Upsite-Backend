@@ -24,7 +24,10 @@ public class GrupoService {
 
     @Transactional(readOnly = true)
     public List<GrupoResponseDTO> getAll(){
-        return grupoRepository.findAll().stream().map(this::toDto).toList();
+        return grupoRepository.findAll().stream()
+                .map(this::toDto)
+                .sorted(this::compararGrupos)
+                .toList();
     }
     @Transactional(readOnly = true)
     public GrupoResponseDTO getById(Integer id){
@@ -39,10 +42,29 @@ public class GrupoService {
     @Transactional(readOnly = true)
     public List<GrupoResponseDTO> getAllByCarreraId(Integer id){
         if(carreraRepository.existsById(id)){
-            return grupoRepository.findAllByCarreraId(id).stream().map(this::toDto).toList();
+            return grupoRepository.findAllByCarreraId(id).stream()
+                    .map(this::toDto)
+                    .sorted(this::compararGrupos)
+                    .toList();
         }else{
             throw new ResourceNotFoundException("No existe una carrera con el id "+id);
         }
+    }
+
+    private int compararGrupos(GrupoResponseDTO g1, GrupoResponseDTO g2) {
+        try {
+            String[] s1 = g1.nombre().split("-");
+            String[] s2 = g2.nombre().split("-");
+            int n1 = Integer.parseInt(s1[0]);
+            int n2 = Integer.parseInt(s2[0]);
+            if (n1 != n2) return Integer.compare(n1, n2);
+            if (s1.length > 1 && s2.length > 1) {
+                return Integer.compare(Integer.parseInt(s1[1]), Integer.parseInt(s2[1]));
+            }
+        } catch (Exception e) {
+            return g1.nombre().compareTo(g2.nombre());
+        }
+        return g1.nombre().compareTo(g2.nombre());
     }
 
     @Transactional

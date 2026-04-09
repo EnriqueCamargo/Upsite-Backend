@@ -54,6 +54,10 @@ public class Usuario {
     @JoinColumn(name = "id_grupo")
     private Grupo grupo;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_carrera")
+    private Carrera carrera;
+
     @Column(name = "status")
     private Integer status = 1;
 

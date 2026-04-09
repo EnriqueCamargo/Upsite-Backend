@@ -48,8 +48,13 @@ public class Publicacion {
     @Column(name = "feedback_ia",columnDefinition = "TEXT")
     private String feedbackIA;
 
-    @Column(name = "target_carrera")
-    private  Integer targetCarrera;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "publicaciones_carreras",
+            joinColumns = @JoinColumn(name = "id_publicacion"),
+            inverseJoinColumns = @JoinColumn(name = "id_carrera")
+    )
+    private List<Carrera> targetCarreras = new ArrayList<>();
 
     @Column(name="es_global")
     private Boolean esGlobal=false;

@@ -14,6 +14,8 @@ public record UsuarioResponseDTO(
         String matricula,
         Long seguidoresCount,
         Long siguiendoCount,
-        Boolean loSigo
+        Boolean loSigo,
+        Integer idCarrera, // Nuevo campo
+        Integer idGrupo     // También id de grupo para facilitar filtrado
 ) {
 }

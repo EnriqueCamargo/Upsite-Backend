@@ -17,6 +17,7 @@ public record PublicacionRequestDTO(
         Importancia importancia,
         Moderacion moderacion,
         String feedbackIA,
+        List<Integer> idsCarreras, // Cambiado a lista para múltiples carreras
         List<Integer> idsGrupos,
         List<MultimediaPublicacionRequestDTO> multimedia,
         @NotNull(message = "se debe definir si la publicacion es global o no")

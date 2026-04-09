@@ -112,7 +112,10 @@ public class GoogleAuthService {
                 usuario.getMatricula(),
                 null, // seguidoresCount
                 null, // siguiendoCount
-                null  // loSigo
+                null, // loSigo
+                usuario.getCarrera() != null ? usuario.getCarrera().getId() : 
+                    (usuario.getGrupo() != null && usuario.getGrupo().getCarrera() != null ? usuario.getGrupo().getCarrera().getId() : null),
+                usuario.getGrupo() != null ? usuario.getGrupo().getId() : null
         );
         return new LoginResponseDTO(token, usuarioResponseDTO);
     }

@@ -13,6 +13,8 @@ public record PublicacionResponseDTO(
         UsuarioResponseDTO usuario,
         Long totalLikes,
         Long totalComentarios,
-        Boolean meGusta
+        Boolean meGusta,
+        List<CarreraResponseDTO> targetCarreras,
+        List<GrupoResponseDTO> targetGrupos
 ) {
 }

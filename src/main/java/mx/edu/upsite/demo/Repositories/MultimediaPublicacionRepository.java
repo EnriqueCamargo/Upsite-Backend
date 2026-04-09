@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface MultimediaPublicacionRepository extends JpaRepository<MultimediaPublicacion,Integer> {
     List<MultimediaPublicacion> findByPublicacionId(Integer idPublicacion);
+    long countByPublicacionId(Integer idPublicacion);
 }

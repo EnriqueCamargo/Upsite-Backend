@@ -1,6 +1,7 @@
 package mx.edu.upsite.demo.Services;
 
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.DTOs.Request.MultimediaPublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Request.PublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
@@ -31,6 +32,8 @@ public class PublicacionService {
     private final LikePublicacionRepository likePublicacionRepository;
     private final ComentarioRepository comentarioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ModerationService moderationService;
+    private final MultimediaPublicacionService multimediaPublicacionService;
 
     @Transactional(readOnly = true)
     public List<PublicacionResponseDTO> getFeed(Integer carrera, Importancia importancia, Integer idUsuario) {
@@ -107,9 +110,13 @@ public class PublicacionService {
     }
 
 
-    @Transactional
     public PublicacionResponseDTO crear(PublicacionRequestDTO dto, Integer idUsuario) {
-        // 1. Blindaje de Usuario (Existencia y Status)
+        PublicacionResponseDTO resultado = guardarPublicacion(dto, idUsuario);
+        return resultado;
+    }
+
+    @Transactional
+    protected PublicacionResponseDTO guardarPublicacion(PublicacionRequestDTO dto, Integer idUsuario) {
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new ResourceNotFoundException("No se puede publicar: Usuario no encontrado."));
 
@@ -117,32 +124,51 @@ public class PublicacionService {
             throw new BadRequestException("Un usuario desactivado no puede realizar publicaciones.");
         }
 
-        // 2. Blindaje de Texto (Obligatorio según @Column nullable=false)
         if (dto.texto() == null || dto.texto().trim().isEmpty()) {
             throw new BadRequestException("El contenido de la publicación es obligatorio.");
         }
 
-        // 3. Mapeo a la Entidad
+        boolean esApropiado = moderationService.esContenidoApropiado(dto.texto().trim(), null);
+
         Publicacion publicacion = new Publicacion();
         publicacion.setUsuario(usuario);
         publicacion.setTexto(dto.texto().trim());
 
-        // Blindaje de Enum: Si el DTO no lo trae, usamos el valor por defecto de la Entidad
         if (dto.importancia() != null) {
             publicacion.setImportancia(dto.importancia());
         }
         publicacion.setEsGlobal(dto.esGlobal());
-        // 5. Valores por defecto del sistema
-        publicacion.setModeracion(Moderacion.PENDIENTE);
-        publicacion.setStatus(1);
-        // fechaPublicacion se genera sola por @CreationTimestamp
 
-        // 6. Guardado y Mapeo al DTO de salida
+        if (esApropiado) {
+            publicacion.setModeracion(Moderacion.APROBADO);
+            publicacion.setStatus(1);
+        } else {
+            publicacion.setModeracion(Moderacion.RECHAZADO);
+            publicacion.setStatus(0);
+        }
+
         Publicacion guardada = publicacionRepository.save(publicacion);
+
+        // Guardar multimedia siempre, sea aprobado o no
+        if (dto.multimedia() != null && !dto.multimedia().isEmpty()) {
+            for (MultimediaPublicacionRequestDTO mediaDto : dto.multimedia()) {
+                MultimediaPublicacionRequestDTO mediaDtoConId = new MultimediaPublicacionRequestDTO(
+                        mediaDto.ruta(),
+                        mediaDto.tipoMultimedia(),
+                        guardada.getId()
+                );
+                multimediaPublicacionService.subirMultimedia(guardada.getId(), mediaDtoConId);
+            }
+        }
+
+        // Lanzamos DESPUÉS de que todo se guardó, pero DENTRO de @Transactional
+        // para que el commit ya ocurrió antes de llegar aquí
+        if (!esApropiado) {
+            throw new BadRequestException("Tu publicación contiene contenido inapropiado y ha sido retirada para revisión.");
+        }
 
         return toDTO(guardada, idUsuario);
     }
-
     @Transactional
     public void eliminarPublicacion(Integer idPublicacion, Integer idUsuarioLogueado) {
         // 1. Buscamos la publicación
@@ -186,39 +212,42 @@ public class PublicacionService {
 
     @Transactional
     public PublicacionResponseDTO actualizar(Integer idPublicacion, PublicacionRequestDTO dto, Integer idUsuarioLogueado) {
-        // 1. Buscar la publicación original
         Publicacion publicacion = publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResourceNotFoundException("No se puede editar: Publicación no encontrada."));
 
-        // 2. Blindaje de Seguridad: Solo el autor puede editar su propio contenido
         if (!publicacion.getUsuario().getId().equals(idUsuarioLogueado)) {
             throw new BadRequestException("No tienes permisos para editar esta publicación.");
         }
 
-        // 3. Blindaje de Estado: No se puede editar algo que ya fue eliminado (Soft Delete)
-        if (publicacion.getStatus() == 0) {
+        if (publicacion.getStatus() == 0 && publicacion.getModeracion() != Moderacion.RECHAZADO) {
             throw new ConflictException("No se puede editar una publicación que ha sido eliminada.");
         }
 
-        // 4. Blindaje de Contenido: Validar que el nuevo texto no sea basura
-        if (dto.texto() == null || dto.texto().trim().isEmpty()) {
-            throw new BadRequestException("El contenido de la publicación no puede quedar vacío.");
-        }
+        // 1. Re-moderación del nuevo texto
+        boolean esApropiado = moderationService.esContenidoApropiado(dto.texto().trim(), null);
 
-        // 5. Actualización de campos permitidos
+        // 2. Actualización de campos
         publicacion.setTexto(dto.texto().trim());
 
-        // Actualizamos importancia solo si el DTO la trae, si no, conservamos la anterior
         if (dto.importancia() != null) {
             publicacion.setImportancia(dto.importancia());
         }
-
-        // El booleano 'esGlobal' se asigna directamente (siendo primitivo en el DTO)
         publicacion.setEsGlobal(dto.esGlobal());
 
-        // 6. Persistencia y retorno
-        // Nota: No tocamos fechaPublicacion (es @CreationTimestamp) ni moderacion (a menos que quieras resetearla a PENDIENTE)
+        // 3. Si el nuevo texto es malo, la "baneamos" de nuevo
+        if (!esApropiado) {
+            publicacion.setModeracion(Moderacion.RECHAZADO);
+            publicacion.setStatus(0);
+        } else {
+            publicacion.setModeracion(Moderacion.APROBADO);
+            publicacion.setStatus(1);
+        }
+
         Publicacion actualizada = publicacionRepository.save(publicacion);
+
+        if (!esApropiado) {
+            throw new BadRequestException("La actualización contiene contenido inapropiado y la publicación ha sido retirada.");
+        }
 
         return toDTO(actualizada, idUsuarioLogueado);
     }

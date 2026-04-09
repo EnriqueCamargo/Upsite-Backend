@@ -86,14 +86,12 @@ public class PublicacionController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping(value = "/{id}/multimedia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping("/{id}/multimedia")
     public ResponseEntity<MultimediaPublicacionResponseDTO> subirMultimedia(
             @PathVariable Integer id,
-            @RequestParam("archivo") MultipartFile archivo,
-            @RequestParam("tipo") TipoMultimedia tipo) {
+            @RequestBody MultimediaPublicacionRequestDTO dto) {
 
-        // Ahora los tipos coinciden perfectamente con el Service
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(multimediaPublicacionService.subirMultimedia(id, archivo, tipo));
+                .body(multimediaPublicacionService.subirMultimedia(id, dto));
     }
 }

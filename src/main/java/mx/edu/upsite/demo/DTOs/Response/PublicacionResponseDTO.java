@@ -1,8 +1,8 @@
 package mx.edu.upsite.demo.DTOs.Response;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
 import mx.edu.upsite.demo.Enums.Importancia;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public record PublicacionResponseDTO(
@@ -15,6 +15,7 @@ public record PublicacionResponseDTO(
         Long totalComentarios,
         Boolean meGusta,
         List<CarreraResponseDTO> targetCarreras,
-        List<GrupoResponseDTO> targetGrupos
+        List<GrupoResponseDTO> targetGrupos,
+        OffsetDateTime fechaPublicacion
 ) {
 }

@@ -47,5 +47,5 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Intege
             Pageable pageable
     );
 
-    List<Publicacion> findByUsuarioIdAndStatus(Integer id, Integer status);
+    List<Publicacion> findByUsuarioIdAndStatusOrderByIdDesc(Integer id, Integer status);
 }

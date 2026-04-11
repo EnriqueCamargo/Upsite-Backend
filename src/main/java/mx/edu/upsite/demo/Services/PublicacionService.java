@@ -116,7 +116,8 @@ public class PublicacionService {
                 (totalComentarios != null) ? totalComentarios : 0L,
                 meGusta,
                 carreras,
-                grupos
+                grupos,
+                p.getFechaPublicacion()
         );
     }
 
@@ -241,7 +242,7 @@ public class PublicacionService {
             throw new BadRequestException("No se pueden consultar publicaciones de un usuario desactivado.");
         }
 
-        return publicacionRepository.findByUsuarioIdAndStatus(idAutor, 1)
+        return publicacionRepository.findByUsuarioIdAndStatusOrderByIdDesc(idAutor, 1)
                 .stream()
                 .map(p -> toDTO(p, idUsuarioLogueado))
                 .toList();

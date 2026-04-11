@@ -33,7 +33,18 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Intege
             "AND (:carreraFiltro IS NULL OR EXISTS (SELECT 1 FROM publicaciones_carreras pc2 WHERE pc2.id_publicacion = p.id_publicacion AND pc2.id_carrera = :carreraFiltro)) " +
             "AND (:grupoFiltro IS NULL OR EXISTS (SELECT 1 FROM publicaciones_grupos pg3 WHERE pg3.id_publicacion = p.id_publicacion AND pg3.id_grupo = :grupoFiltro)) " +
             "AND (:importancia IS NULL OR p.importancia = CAST(:importancia AS enum_importancia)) " +
-            "ORDER BY p.fecha_publicacion DESC",
+            "ORDER BY " +
+            "   (p.fecha_publicacion::date = CURRENT_DATE) DESC, " +
+            "   CASE " +
+            "       WHEN p.fecha_publicacion::date = CURRENT_DATE THEN " +
+            "           CASE " +
+            "               WHEN p.importancia = 'AVISO_IMPORTANTE' THEN 1 " +
+            "               WHEN p.importancia = 'AVISO' THEN 2 " +
+            "               ELSE 3 " +
+            "           END " +
+            "       ELSE 4 " +
+            "   END ASC, " +
+            "   p.fecha_publicacion DESC",
             nativeQuery = true)
     List<Publicacion> findFeed(
             @Param("carreraUsuario") Integer carreraUsuario,

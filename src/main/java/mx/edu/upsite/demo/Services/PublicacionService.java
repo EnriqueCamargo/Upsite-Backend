@@ -234,7 +234,7 @@ public class PublicacionService {
     }
 
     @Transactional(readOnly = true)
-    public List<PublicacionResponseDTO> getPublicacionesByAutorId(Integer idAutor, Integer idUsuarioLogueado) {
+    public List<PublicacionResponseDTO> getPublicacionesByAutorId(Integer idAutor, Integer idUsuarioLogueado, int page, int size) {
         Usuario autor = usuarioRepository.findById(idAutor)
                 .orElseThrow(() -> new ResourceNotFoundException("El perfil solicitado no existe."));
 
@@ -242,7 +242,8 @@ public class PublicacionService {
             throw new BadRequestException("No se pueden consultar publicaciones de un usuario desactivado.");
         }
 
-        return publicacionRepository.findByUsuarioIdAndStatusOrderByIdDesc(idAutor, 1)
+        Pageable pageable = PageRequest.of(page, size);
+        return publicacionRepository.findByUsuarioIdAndStatusOrderByIdDesc(idAutor, 1, pageable)
                 .stream()
                 .map(p -> toDTO(p, idUsuarioLogueado))
                 .toList();

@@ -1,6 +1,7 @@
 package mx.edu.upsite.demo.Repositories;
 
 import mx.edu.upsite.demo.Entities.Publicacion;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -58,5 +59,5 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Intege
             Pageable pageable
     );
 
-    List<Publicacion> findByUsuarioIdAndStatusOrderByIdDesc(Integer id, Integer status);
+    Page<Publicacion> findByUsuarioIdAndStatusOrderByIdDesc(Integer id, Integer status, Pageable pageable);
 }

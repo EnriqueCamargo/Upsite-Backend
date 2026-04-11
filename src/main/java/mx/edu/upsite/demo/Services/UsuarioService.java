@@ -33,9 +33,14 @@ public class UsuarioService {
         return usuarioRepository.findByStatus(0).stream().map(usuario -> mapearADto(usuario,null)).toList();
     }
 
-    public UsuarioResponseDTO getUsuarioById(Integer id) {
+    public UsuarioResponseDTO getUsuarioById(Integer id, Integer idLogueado) {
         return usuarioRepository.findById(id)
-                .map(u -> mapearADto(u, null))
+                .map(u -> {
+                    boolean loSigo = (idLogueado != null) &&
+                            (u.getSeguidores() != null && u.getSeguidores().stream()
+                                    .anyMatch(s -> s.getId().equals(idLogueado)));
+                    return mapearADto(u, loSigo);
+                })
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
     }
 
@@ -126,6 +131,63 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
+    @Transactional
+    public void seguirUsuario(Integer idSeguidor, Integer idSeguido) {
+        if (idSeguidor.equals(idSeguido)) {
+            throw new BadRequestException("No puedes seguirte a ti mismo.");
+        }
+
+        Usuario seguidor = usuarioRepository.findById(idSeguidor)
+                .orElseThrow(() -> new ResourceNotFoundException("Seguidor no encontrado."));
+        Usuario seguido = usuarioRepository.findById(idSeguido)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario a seguir no encontrado."));
+
+        if (!seguidor.getSiguiendo().contains(seguido)) {
+            seguidor.getSiguiendo().add(seguido);
+            usuarioRepository.save(seguidor);
+        }
+    }
+
+    @Transactional
+    public void dejarDeSeguir(Integer idSeguidor, Integer idSeguido) {
+        Usuario seguidor = usuarioRepository.findById(idSeguidor)
+                .orElseThrow(() -> new ResourceNotFoundException("Seguidor no encontrado."));
+        Usuario seguido = usuarioRepository.findById(idSeguido)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario a dejar de seguir no encontrado."));
+
+        seguidor.getSiguiendo().remove(seguido);
+        usuarioRepository.save(seguidor);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioResponseDTO> getSeguidores(Integer idUsuario, Integer idLogueado) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        return usuario.getSeguidores().stream()
+                .map(u -> {
+                    boolean loSigo = (idLogueado != null) &&
+                            (u.getSeguidores() != null && u.getSeguidores().stream()
+                                    .anyMatch(s -> s.getId().equals(idLogueado)));
+                    return mapearADto(u, loSigo);
+                })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<UsuarioResponseDTO> getSiguiendo(Integer idUsuario, Integer idLogueado) {
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        return usuario.getSiguiendo().stream()
+                .map(u -> {
+                    boolean loSigo = (idLogueado != null) &&
+                            (u.getSeguidores() != null && u.getSeguidores().stream()
+                                    .anyMatch(s -> s.getId().equals(idLogueado)));
+                    return mapearADto(u, loSigo);
+                })
+                .toList();
+    }
 
     private UsuarioResponseDTO mapearADto(Usuario u, Boolean loSigo) {
 

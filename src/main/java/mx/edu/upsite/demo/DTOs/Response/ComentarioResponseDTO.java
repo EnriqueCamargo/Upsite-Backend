@@ -12,6 +12,7 @@ public record ComentarioResponseDTO (
         Integer idPublicacion,
         Integer idPadre, //null en caso de ser el primer comentario y no una respuesta a otro
         Long totalLikes,   // ← nuevo
-        Boolean meGusta    // ← nuevo
+        Boolean meGusta,    // ← nuevo
+        Integer idAutor
 ){
 }

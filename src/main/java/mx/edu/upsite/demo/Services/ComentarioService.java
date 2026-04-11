@@ -142,7 +142,8 @@ public class ComentarioService {
                 c.getPublicacion() != null ? c.getPublicacion().getId() : null,
                 c.getPadre() != null ? c.getPadre().getId() : null,
                 totalLikes,
-                meGusta
+                meGusta,
+                c.getUsuario() != null ? c.getUsuario().getId() : null
         );
     }
 }

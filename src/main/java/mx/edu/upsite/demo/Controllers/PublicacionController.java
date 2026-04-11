@@ -45,9 +45,12 @@ public class PublicacionController {
     }
 
     @GetMapping("/autor/{idAutor}")
-    public ResponseEntity<List<PublicacionResponseDTO>> getByAutor(@PathVariable Integer idAutor) {
+    public ResponseEntity<List<PublicacionResponseDTO>> getByAutor(
+            @PathVariable Integer idAutor,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return ResponseEntity.ok(publicacionService.getPublicacionesByAutorId(idAutor, usuario.getId()));
+        return ResponseEntity.ok(publicacionService.getPublicacionesByAutorId(idAutor, usuario.getId(), page, size));
     }
 
     // --- ACCIONES CORE ---

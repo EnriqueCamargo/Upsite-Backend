@@ -8,6 +8,7 @@ import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Importancia;
 import mx.edu.upsite.demo.Enums.TipoMultimedia;
+import mx.edu.upsite.demo.Repositories.UsuarioRepository;
 import mx.edu.upsite.demo.Services.LikePublicacionService;
 import mx.edu.upsite.demo.Services.MultimediaPublicacionService;
 import mx.edu.upsite.demo.Services.PublicacionService;
@@ -15,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +31,7 @@ public class PublicacionController {
     private final PublicacionService publicacionService;
     private final LikePublicacionService likePublicacionService;
     private final MultimediaPublicacionService multimediaPublicacionService;
+    private final UsuarioRepository usuarioRepository;
 
     // --- CONSULTAS ---
 
@@ -57,9 +60,24 @@ public class PublicacionController {
 
     @PostMapping
     public ResponseEntity<PublicacionResponseDTO> crear(@RequestBody PublicacionRequestDTO dto) {
-        Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        // Usamos status 201 para creaciones exitosas
-        return ResponseEntity.status(HttpStatus.CREATED).body(publicacionService.crear(dto, usuario.getId()));
+        // 1. Obtenemos el principal como String (evitamos el ClassCastException)
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String identificador;
+
+        if (principal instanceof UserDetails) {
+            identificador = ((UserDetails) principal).getUsername();
+        } else {
+            identificador = principal.toString();
+        }
+
+        // 2. Buscamos al usuario real en la DB usando el repositorio
+        // Asumiendo que guardaste el email o username en el token
+        Usuario usuario = usuarioRepository.findByEmail(identificador)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // 3. Ahora sí, usamos el ID real del objeto de la base de datos
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(publicacionService.crear(dto, usuario.getId()));
     }
 
     @PutMapping("/{id}")
@@ -101,4 +119,6 @@ public class PublicacionController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(multimediaPublicacionService.subirMultimedia(id, dto, usuario.getId()));
     }
+
+
 }

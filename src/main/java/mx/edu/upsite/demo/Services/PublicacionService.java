@@ -11,6 +11,7 @@ import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Importancia;
 import mx.edu.upsite.demo.Enums.Moderacion;
 import mx.edu.upsite.demo.Enums.Rol;
+import mx.edu.upsite.demo.Enums.TipoNotificacion;
 import mx.edu.upsite.demo.Exceptions.BadRequestException;
 import mx.edu.upsite.demo.Exceptions.ConflictException;
 import mx.edu.upsite.demo.Exceptions.ResourceNotFoundException;
@@ -21,7 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +39,7 @@ public class PublicacionService {
     private final GrupoRepository grupoRepository;     // Inyectado
     private final ModerationService moderationService;
     private final MultimediaPublicacionService multimediaPublicacionService;
+    private final NotificacionService notificacionService;
 
     @Transactional(readOnly = true)
     public List<PublicacionResponseDTO> getFeed(Integer carreraFiltro, Importancia importancia, Integer idUsuario, Boolean esGlobalFiltro, Integer grupoFiltro, int page, int size) {
@@ -151,7 +155,7 @@ public class PublicacionService {
         boolean esApropiado = moderationService.esContenidoApropiado(dto.texto().trim(), null);
 
         Publicacion publicacion = (idPublicacion != null) ? publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new ResourceNotFoundException("Publicación a actualizar no encontrada.")) : new Publicacion();
+                                                            .orElseThrow(() -> new ResourceNotFoundException("Publicación a actualizar no encontrada.")) : new Publicacion();
 
         publicacion.setUsuario(usuario);
         publicacion.setTexto(dto.texto().trim());
@@ -171,9 +175,8 @@ public class PublicacionService {
 
                 if (dto.idsGrupos() != null && !dto.idsGrupos().isEmpty()) {
                     List<Grupo> grupos = grupoRepository.findAllById(dto.idsGrupos());
-                    // Validar que todos los grupos encontrados pertenezcan a las carreras especificadas
-                    boolean todosPertenecen = grupos.stream().allMatch(g -> 
-                        dto.idsCarreras().contains(g.getCarrera().getId())
+                    boolean todosPertenecen = grupos.stream().allMatch(g ->
+                            dto.idsCarreras().contains(g.getCarrera().getId())
                     );
                     if (!todosPertenecen || grupos.size() != dto.idsGrupos().size()) {
                         throw new BadRequestException("Uno o más grupos no son válidos o no pertenecen a las carreras seleccionadas.");
@@ -191,7 +194,6 @@ public class PublicacionService {
             publicacion.getGruposDestino().clear();
         }
 
-
         if (esApropiado) {
             publicacion.setModeracion(Moderacion.APROBADO);
             publicacion.setStatus(1);
@@ -201,6 +203,12 @@ public class PublicacionService {
         }
 
         Publicacion guardada = publicacionRepository.save(publicacion);
+
+        // --- LÓGICA DE NOTIFICACIONES PARA UPSITE ---
+        // Solo si es apropiado y es un rol de autoridad (Profesor/Directivo)
+        if (esApropiado && (usuario.getRol() != Rol.ESTUDIANTE)) {
+            procesarNotificacionesAvisos(guardada, usuario);
+        }
 
         if (dto.multimedia() != null && !dto.multimedia().isEmpty()) {
             for (MultimediaPublicacionRequestDTO mediaDto : dto.multimedia()) {
@@ -213,6 +221,48 @@ public class PublicacionService {
         }
 
         return toDTO(guardada, idUsuario);
+    }
+
+    /**
+     * Método privado para gestionar el envío masivo de avisos
+     */
+    private void procesarNotificacionesAvisos(Publicacion pub, Usuario autor) {
+        Set<Usuario> destinatarios = new HashSet<>();
+
+        // 1. Identificar destinatarios según el alcance
+        if (pub.getEsGlobal()) {
+            // Si es global, buscamos a todos los usuarios activos
+            destinatarios.addAll(usuarioRepository.findByStatus(1));
+        } else {
+            // Si es por grupo, buscamos en los grupos destino
+            if (pub.getGruposDestino() != null && !pub.getGruposDestino().isEmpty()) {
+                for (Grupo g : pub.getGruposDestino()) {
+                    destinatarios.addAll(usuarioRepository.findByGrupoIdAndStatus(g.getId(), 1));
+                }
+            }
+            // Si es por carrera (pero no grupos específicos), buscamos en las carreras
+            else if (pub.getTargetCarreras() != null && !pub.getTargetCarreras().isEmpty()) {
+                for (Carrera c : pub.getTargetCarreras()) {
+                    destinatarios.addAll(usuarioRepository.findByCarreraIdAndStatus(c.getId(), 1));
+                }
+            }
+        }
+
+        // 2. Disparar notificaciones
+        String mensaje = "El " + autor.getRol() + " " + autor.getNombres() + " ha publicado un aviso importante.";
+
+        for (Usuario receptor : destinatarios) {
+            if (!receptor.getId().equals(autor.getId())) { // No notificarse a sí mismo
+                notificacionService.crearNotificacion(
+                        receptor,
+                        autor,
+                        TipoNotificacion.AVISO,
+                        mensaje,
+                        pub,
+                        true // Enviar correo institucional
+                );
+            }
+        }
     }
 
     @Transactional

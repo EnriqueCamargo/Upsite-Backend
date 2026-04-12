@@ -9,10 +9,14 @@ import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.TipoNotificacion;
 import mx.edu.upsite.demo.Repositories.NotificacionRepository;
 import mx.edu.upsite.demo.Repositories.UsuarioRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 @Service
 @RequiredArgsConstructor
@@ -24,38 +28,54 @@ public class NotificacionService {
 
     @Transactional
     public void crearNotificacion(Usuario receptor, Usuario emisor, TipoNotificacion tipo, String mensaje, Publicacion pub, boolean enviarEmail) {
-        // 1. Guardar en Base de Datos
-        Notificacion noti = new Notificacion();
-        noti.setUsuario(receptor);
-        noti.setEmisor(emisor);
-        noti.setTipoNotificacion(tipo);
-        noti.setPublicacion(pub);
-        noti.setLeido(false);
+        crearNotificacionesBulk(List.of(receptor), emisor, tipo, mensaje, pub, enviarEmail);
+    }
 
-        Notificacion guardada = repository.save(noti);
+    @Transactional
+    public void crearNotificacionesBulk(Collection<Usuario> receptores, Usuario emisor, TipoNotificacion tipo, String mensaje, Publicacion pub, boolean enviarEmail) {
+        List<Notificacion> notificaciones = new ArrayList<>();
+        for (Usuario receptor : receptores) {
+            if (receptor.getId().equals(emisor.getId())) continue;
 
-        // 2. Si aplica, enviar el correo institucional
+            Notificacion noti = new Notificacion();
+            noti.setUsuario(receptor);
+            noti.setEmisor(emisor);
+            noti.setTipoNotificacion(tipo);
+            noti.setPublicacion(pub);
+            noti.setLeido(false);
+            noti.setEnviadoEmail(enviarEmail);
+            notificaciones.add(noti);
+        }
+
+        repository.saveAll(notificaciones);
+
         if (enviarEmail) {
-            NotificacionRequestDTO mailDto = new NotificacionRequestDTO(
-                    receptor.getEmail(),
-                    "Nueva notificación en UPSITE",
-                    "¡Hola, " + receptor.getNombres() + "!",
-                    mensaje,
-                    "https://upsite-upsin.netlify.app/publicacion/" + pub.getId(), // Tu URL de producción
-                    tipo
-            );
-            emailService.enviarNotificacion(mailDto);
+            for (Usuario receptor : receptores) {
+                if (receptor.getId().equals(emisor.getId())) continue;
 
-            guardada.setEnviadoEmail(true);
-            repository.save(guardada);
+                NotificacionRequestDTO mailDto = new NotificacionRequestDTO(
+                        receptor.getEmail(),
+                        "Nueva notificación en UPSITE",
+                        "¡Hola, " + receptor.getNombres() + "!",
+                        mensaje,
+                        "https://upsite-upsin.netlify.app/publicacion/" + pub.getId(),
+                        tipo
+                );
+                emailService.enviarNotificacion(mailDto);
+            }
         }
     }
 
-    public List<NotificacionResponseDTO> listarNotificaciones(Integer usuarioId) {
-        return repository.findByUsuarioIdOrderByFechaDesc(usuarioId)
+    @Transactional(readOnly = true)
+    public List<NotificacionResponseDTO> listarNotificaciones(Integer usuarioId, int page, int size) {
+        return repository.findByUsuarioIdOrderByFechaDesc(usuarioId, PageRequest.of(page, size))
                 .stream()
                 .map(this::toDTO)
                 .toList();
+    }
+
+    public List<NotificacionResponseDTO> listarNotificaciones(Integer usuarioId) {
+        return listarNotificaciones(usuarioId, 0, 50);
     }
 
     private NotificacionResponseDTO toDTO(Notificacion n) {

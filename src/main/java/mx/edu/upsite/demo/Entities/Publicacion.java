@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import mx.edu.upsite.demo.Enums.Importancia;
 import mx.edu.upsite.demo.Enums.Moderacion;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -49,6 +50,7 @@ public class Publicacion {
     private String feedbackIA;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @BatchSize(size = 20)
     @JoinTable(
             name = "publicaciones_carreras",
             joinColumns = @JoinColumn(name = "id_publicacion"),
@@ -70,6 +72,7 @@ public class Publicacion {
     private OffsetDateTime fechaEliminacion;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @BatchSize(size = 20)
     @JoinTable(
             name = "publicaciones_grupos", // Nombre de la tabla física en DB
             joinColumns = @JoinColumn(name = "id_publicacion"), // FK a esta entidad
@@ -78,5 +81,6 @@ public class Publicacion {
     private List<Grupo> gruposDestino = new ArrayList<>();
 
     @OneToMany(mappedBy = "publicacion", cascade = CascadeType.ALL, orphanRemoval = true)
+    @BatchSize(size = 20)
     private List<MultimediaPublicacion> multimedia = new ArrayList<>();
 }

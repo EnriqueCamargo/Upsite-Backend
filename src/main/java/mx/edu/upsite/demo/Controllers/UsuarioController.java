@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import mx.edu.upsite.demo.DTOs.Response.UsuarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Services.UsuarioService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -17,11 +19,12 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    // 1. Obtener todos los activos
+    // 1. Obtener todos (paginado para admin)
     @GetMapping
-    public ResponseEntity<List<UsuarioResponseDTO>> listarTodos() {
-        Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return ResponseEntity.ok(usuarioService.getAllUsuarios());
+    public ResponseEntity<List<UsuarioResponseDTO>> listarTodos(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(usuarioService.getAllUsuarios(PageRequest.of(page, size)));
     }
 
     // 2. Buscar por ID
@@ -38,9 +41,12 @@ public class UsuarioController {
 
     // 3. El Buscador Global (Recibe el parámetro 'q')
     @GetMapping("/buscar")
-    public ResponseEntity<List<UsuarioResponseDTO>> buscar(@RequestParam String q) {
+    public ResponseEntity<List<UsuarioResponseDTO>> buscar(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         Usuario logueado = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return ResponseEntity.ok(usuarioService.buscarUsuario(q, logueado.getId()));
+        return ResponseEntity.ok(usuarioService.buscarUsuario(q, logueado.getId(), PageRequest.of(page, size)));
     }
 
     @GetMapping("/grupo/{grupoNombre}")

@@ -37,6 +37,11 @@ public class GrupoController {
         return ResponseEntity.ok(grupoService.getAllByCarreraId(carreraId));
     }
 
+    @GetMapping("/carreras")
+    public ResponseEntity<List<GrupoResponseDTO>> getAllByCarreraIds(@RequestParam List<Integer> ids) {
+        return ResponseEntity.ok(grupoService.getAllByCarreraIds(ids));
+    }
+
     @PostMapping
     public ResponseEntity<GrupoResponseDTO> crear(@RequestBody GrupoRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(grupoService.crear(dto));

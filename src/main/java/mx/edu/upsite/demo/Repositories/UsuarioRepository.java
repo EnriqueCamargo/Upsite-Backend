@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,7 +18,11 @@ public interface UsuarioRepository extends JpaRepository <Usuario, Integer> {
     @Query("SELECT u FROM Usuario u WHERE " +
             "LOWER(CONCAT(u.nombres, ' ', u.apellidos)) LIKE LOWER(CONCAT('%', :criterio, '%')) OR " +
             "u.matricula LIKE %:criterio%")
-    List<Usuario> buscarUsuario(@Param("criterio") String criterio);
+    Page<Usuario> buscarUsuario(@Param("criterio") String criterio, Pageable pageable);
+    
+    Page<Usuario> findAll(Pageable pageable);
+    Page<Usuario> findByStatus(Integer status, Pageable pageable);
+
     List<Usuario> findByStatusAndGrupoId(Integer status, Integer grupoId);
     List<Usuario> findByStatusAndGrupoNombre(Integer status, String grupoNombre);
     List<Usuario>findByStatus(Integer status);

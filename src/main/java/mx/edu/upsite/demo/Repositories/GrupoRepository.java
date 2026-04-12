@@ -12,5 +12,6 @@ public interface GrupoRepository extends JpaRepository<Grupo,Integer> {
     boolean existsByNombre(String nombre);
     Optional<Grupo> findByNombreIgnoreCase(String nombre);
     List<Grupo> findAllByCarreraId(Integer carreraId);
+    List<Grupo> findAllByCarreraIdIn(List<Integer> carreraIds);
     boolean existsByNombreIgnoreCaseAndCarreraId(String nombre, Integer carreraId);
 }

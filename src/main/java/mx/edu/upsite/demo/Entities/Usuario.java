@@ -3,6 +3,7 @@ package mx.edu.upsite.demo.Entities;
 import jakarta.persistence.*;
 import lombok.*;
 import mx.edu.upsite.demo.Enums.Rol;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -20,6 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
+@BatchSize(size = 20)
 public class Usuario {
 
     @Id
@@ -79,6 +81,7 @@ public class Usuario {
 
     // A QUUIÉNES SIGO YO (Mis "ídolos")
     @ManyToMany(fetch = FetchType.LAZY)
+    @BatchSize(size = 20)
     @JoinTable(
             name = "seguidores",
             joinColumns = @JoinColumn(name = "id_seguidor"), // Yo, el que hace la acción
@@ -88,5 +91,6 @@ public class Usuario {
 
     // QUIÉNES ME SIGUEN A MÍ (Mis "fans")
     @ManyToMany(mappedBy = "siguiendo")
+    @BatchSize(size = 20)
     private List<Usuario> seguidores = new ArrayList<>();
 }

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: upsite-backend
+    env: docker
+    plan: free # O el plan que prefieras
+    region: ohio # La más cercana a México suele ser virginia u ohio
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DB_URL
+        sync: false # Lo configurarás manualmente en el dashboard por seguridad
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false

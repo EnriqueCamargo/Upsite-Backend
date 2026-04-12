@@ -20,17 +20,17 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http )throws  Exception{
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource)) // Mantén tu config de CORS
+                .csrf(csrf -> csrf.disable()) // Desactiva CSRF
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                        .anyRequest().permitAll() // <--- CAMBIA ESTO: Permite todo sin autenticación
+                );
+        // .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        // ^ Comenta el filtro de JWT por ahora para que no intente validar tokens
 
         return http.build();
     }

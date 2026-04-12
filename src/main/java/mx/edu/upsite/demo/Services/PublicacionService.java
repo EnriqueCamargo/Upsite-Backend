@@ -3,7 +3,11 @@ package mx.edu.upsite.demo.Services;
 import lombok.RequiredArgsConstructor;
 import mx.edu.upsite.demo.DTOs.Request.MultimediaPublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Request.PublicacionRequestDTO;
-import mx.edu.upsite.demo.DTOs.Response.*;
+import mx.edu.upsite.demo.DTOs.Response.CarreraResponseDTO;
+import mx.edu.upsite.demo.DTOs.Response.GrupoResponseDTO;
+import mx.edu.upsite.demo.DTOs.Response.MultimediaPublicacionResponseDTO;
+import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
+import mx.edu.upsite.demo.DTOs.Response.UsuarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Carrera;
 import mx.edu.upsite.demo.Entities.Grupo;
 import mx.edu.upsite.demo.Entities.Publicacion;
@@ -22,56 +26,34 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PublicacionService {
 
     private final PublicacionRepository publicacionRepository;
+    private final UsuarioRepository usuarioRepository;
     private final LikePublicacionRepository likePublicacionRepository;
     private final ComentarioRepository comentarioRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final CarreraRepository carreraRepository; // Inyectado
-    private final GrupoRepository grupoRepository;     // Inyectado
-    private final ModerationService moderationService;
     private final MultimediaPublicacionService multimediaPublicacionService;
+    private final CarreraRepository carreraRepository;
+    private final GrupoRepository grupoRepository;
+    private final ModerationService moderationService;
 
-    @Transactional(readOnly = true)
-    public List<PublicacionResponseDTO> getFeed(Integer carreraFiltro, Importancia importancia, Integer idUsuario, Boolean esGlobalFiltro, Integer grupoFiltro, int page, int size) {
+    public List<PublicacionResponseDTO> getFeed(Integer carreraFiltro, Importancia importanciaFiltro, Integer idUsuario, Boolean esGlobalFiltro, Integer grupoFiltro, int page, int size) {
         Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado, no se puede generar el feed."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
 
-        Integer carreraUsuario = (usuario.getCarrera() != null) ? usuario.getCarrera().getId() :
-                ((usuario.getGrupo() != null && usuario.getGrupo().getCarrera() != null)
-                ? usuario.getGrupo().getCarrera().getId() : null);
-        
+        boolean esPersonal = usuario.getRol() == Rol.DOCENTE || usuario.getRol() == Rol.ADMIN;
+        Integer carreraUsuario = (usuario.getCarrera() != null) ? usuario.getCarrera().getId() : 
+                                 ((usuario.getGrupo() != null) ? usuario.getGrupo().getCarrera().getId() : null);
         Integer grupoUsuario = (usuario.getGrupo() != null) ? usuario.getGrupo().getId() : null;
 
-        String importanciaStr = (importancia != null) ? importancia.name() : null;
-
-        // DOCENTE o superior ven todo (esPersonal = true)
-        boolean esPersonal = usuario.getRol() != Rol.ESTUDIANTE;
+        String impStr = (importanciaFiltro != null) ? importanciaFiltro.name() : null;
 
         Pageable pageable = PageRequest.of(page, size);
-
-        List<Publicacion> publicaciones = publicacionRepository.findFeed(
-                carreraUsuario,
-                grupoUsuario,
-                idUsuario,
-                carreraFiltro,
-                importanciaStr,
-                esPersonal,
-                esGlobalFiltro,
-                grupoFiltro,
-                pageable
-        );
-
-        if (publicaciones.isEmpty()) {
-            return List.of();
-        }
-
-        return publicaciones.stream()
+        return publicacionRepository.findFeed(carreraUsuario, grupoUsuario, idUsuario, carreraFiltro, impStr, esPersonal, esGlobalFiltro, grupoFiltro, pageable)
+                .stream()
                 .map(p -> toDTO(p, idUsuario))
                 .toList();
     }
@@ -93,7 +75,8 @@ public class PublicacionService {
                     u.getFotoPerfil(), u.getEmail(), u.getRol(), u.getMatricula(),
                     null, null, null,
                     (u.getCarrera() != null) ? u.getCarrera().getId() : null,
-                    (u.getGrupo() != null) ? u.getGrupo().getId() : null
+                    (u.getGrupo() != null) ? u.getGrupo().getId() : null,
+                    u.getStatus()
             );
         }
 
@@ -160,29 +143,31 @@ public class PublicacionService {
 
         boolean esApropiado = moderationService.esContenidoApropiado(dto.texto().trim(), null);
 
-        Publicacion publicacion = (idPublicacion != null) ? publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new ResourceNotFoundException("Publicación a actualizar no encontrada.")) : new Publicacion();
-
-        publicacion.setUsuario(usuario);
-        publicacion.setTexto(dto.texto().trim());
-        if (dto.importancia() != null) {
-            publicacion.setImportancia(dto.importancia());
+        Publicacion publicacion;
+        if (idPublicacion != null) {
+            publicacion = publicacionRepository.findById(idPublicacion)
+                    .orElseThrow(() -> new ResourceNotFoundException("Publicación no encontrada."));
+        } else {
+            publicacion = new Publicacion();
+            publicacion.setUsuario(usuario);
+            publicacion.setStatus(1);
         }
+
+        publicacion.setTexto(dto.texto().trim());
+        publicacion.setImportancia(dto.importancia());
         publicacion.setEsGlobal(dto.esGlobal());
 
-        // Asignación de carreras y grupos
         if (!dto.esGlobal()) {
             if (dto.idsCarreras() != null && !dto.idsCarreras().isEmpty()) {
                 List<Carrera> carreras = carreraRepository.findAllById(dto.idsCarreras());
                 if (carreras.size() != dto.idsCarreras().size()) {
-                    throw new ResourceNotFoundException("Una o más carreras especificadas no existen.");
+                    throw new BadRequestException("Una o más carreras seleccionadas no son válidas.");
                 }
                 publicacion.setTargetCarreras(carreras);
 
                 if (dto.idsGrupos() != null && !dto.idsGrupos().isEmpty()) {
                     List<Grupo> grupos = grupoRepository.findAllById(dto.idsGrupos());
-                    // Validar que todos los grupos encontrados pertenezcan a las carreras especificadas
-                    boolean todosPertenecen = grupos.stream().allMatch(g -> 
+                    boolean todosPertenecen = grupos.stream().allMatch(g ->
                         dto.idsCarreras().contains(g.getCarrera().getId())
                     );
                     if (!todosPertenecen || grupos.size() != dto.idsGrupos().size()) {
@@ -200,7 +185,6 @@ public class PublicacionService {
             publicacion.getTargetCarreras().clear();
             publicacion.getGruposDestino().clear();
         }
-
 
         if (esApropiado) {
             publicacion.setModeracion(Moderacion.APROBADO);
@@ -230,7 +214,10 @@ public class PublicacionService {
         Publicacion publicacion = publicacionRepository.findById(idPublicacion)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontró la publicación a eliminar."));
 
-        if (!publicacion.getUsuario().getId().equals(idUsuarioLogueado)) {
+        Usuario logueado = usuarioRepository.findById(idUsuarioLogueado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+        if (!publicacion.getUsuario().getId().equals(idUsuarioLogueado) && logueado.getRol() != Rol.ADMIN) {
             throw new BadRequestException("No tienes permisos para eliminar esta publicación.");
         }
 

@@ -5,98 +5,87 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import lombok.RequiredArgsConstructor;
+import mx.edu.upsite.demo.Security.JwtTokenProvider;
 import mx.edu.upsite.demo.DTOs.Response.LoginResponseDTO;
 import mx.edu.upsite.demo.DTOs.Response.UsuarioResponseDTO;
 import mx.edu.upsite.demo.Entities.Usuario;
 import mx.edu.upsite.demo.Enums.Rol;
+import mx.edu.upsite.demo.Exceptions.BadRequestException;
 import mx.edu.upsite.demo.Repositories.UsuarioRepository;
-import mx.edu.upsite.demo.Security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class GoogleAuthService {
 
     @Value("${google.client-id}")
-    private String clientId;
+    private String googleClientId;
 
     private final UsuarioRepository usuarioRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public LoginResponseDTO loginWithGoogle(String googleToken) throws Exception {
-        System.out.println("Token recibido: " + googleToken);
-        // Verificar el token con Google
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                new NetHttpTransport(), new GsonFactory())
-                .setAudience(Collections.singletonList(clientId))
+    public LoginResponseDTO loginConGoogle(String idTokenString) {
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                .setAudience(Collections.singletonList(googleClientId))
                 .build();
 
-        GoogleIdToken idToken = verifier.verify(googleToken);
-        if (idToken == null) {
-            throw new RuntimeException("Token de Google inválido");
+        GoogleIdToken idToken;
+        try {
+            idToken = verifier.verify(idTokenString);
+        } catch (Exception e) {
+            throw new BadRequestException("Token de Google inválido");
         }
 
-        // Extraer datos del usuario desde el token de Google
+        if (idToken == null) {
+            throw new BadRequestException("Token de Google inválido");
+        }
+
         GoogleIdToken.Payload payload = idToken.getPayload();
-        String googleId = payload.getSubject();
         String email = payload.getEmail();
+
+        // Validar que sea correo institucional de la UPSIN
+        if (!email.endsWith("@upsin.edu.mx")) {
+            throw new BadRequestException("Solo se permiten correos institucionales de upsin.edu.mx");
+        }
+
+        String googleId = payload.getSubject();
         String nombres = (String) payload.get("given_name");
         String apellidos = (String) payload.get("family_name");
         String fotoPerfil = (String) payload.get("picture");
 
-
-
-        //Separa las partes del cuerpo del email
-        String cuerpoEmail=email.split("@")[0];
-        String dominioEmail=email.split("@")[1];
-        String inicialEmail=cuerpoEmail.substring(0,1).toLowerCase();
-        String restoEmail=cuerpoEmail.substring(1).toLowerCase();
-        //formato de los nombres para el email
-        String inicialNombre= nombres.substring(0,1).toLowerCase();
-        String primerApellido = (apellidos != null && !apellidos.isEmpty())
-                ? apellidos.split(" ")[0].toLowerCase()
-                : null;
-
-        //Validación de usuarios solo de UPSIN
-        if(!dominioEmail.equals("upsin.edu.mx")){
-            throw new RuntimeException("Solo se permiten Cuentas de la UPSIN");
-        }
-        // Buscar o crear el usuario
-        Usuario usuario = usuarioRepository.findByGoogleId(googleId)
+        // Intentar buscar usuario por email, si no existe crearlo
+        Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseGet(() -> {
-                    Usuario nuevo = new Usuario();
-                    nuevo.setGoogleId(googleId);
-                    nuevo.setEmail(email);
-                    nuevo.setNombres(nombres);
-                    nuevo.setApellidos(apellidos);
-                    nuevo.setFotoPerfil(fotoPerfil);
-                    if (cuerpoEmail.matches("\\d+")){ nuevo.setRol(Rol.ESTUDIANTE); nuevo.setMatricula(cuerpoEmail);}
-                    else if(inicialEmail.equals(inicialNombre) && restoEmail.equals(primerApellido)) nuevo.setRol(Rol.DOCENTE);
-                    return usuarioRepository.save(nuevo);
+                    // Generar matrícula a partir del correo (ej: 2021030612)
+                    String matricula = email.split("@")[0];
+                    return Usuario.builder()
+                            .email(email)
+                            .googleId(googleId)
+                            .nombres(nombres)
+                            .apellidos(apellidos)
+                            .fotoPerfil(fotoPerfil)
+                            .matricula(matricula)
+                            .rol(Rol.ESTUDIANTE)
+                            .status(1)
+                            .siguiendo(new java.util.ArrayList<>())
+                            .seguidores(new java.util.ArrayList<>())
+                            .build();
                 });
-        // >>> AÑADIDO: Actualizar datos de perfil en cada login <<<
-        usuario.setNombres(nombres);
-        usuario.setApellidos(apellidos);
-        usuario.setFotoPerfil(fotoPerfil);
 
-
-        // >>> AÑADIDO: Actualizar datos de perfil en cada login <<<
+        // Actualizar datos de Google por si cambiaron
+        usuario.setGoogleId(googleId);
         usuario.setNombres(nombres);
         usuario.setApellidos(apellidos);
         usuario.setFotoPerfil(fotoPerfil);
 
 
         // >>> AÑADIDO: Actualizar fecha de último acceso en cada login <<<
-        // (Asegúrate de tener el campo 'ultimoAcceso' en tu entidad Usuario)
         usuario.setUltimoAcceso(OffsetDateTime.now());
 
-        // >>> MOVIDO: El .save(usuario) ahora está fuera del orElseGet <<<
-        // Esto garantiza que el UPDATE se dispare siempre que se use el método
         usuario = usuarioRepository.save(usuario);
         String token=jwtTokenProvider.generateToken(usuario);
         UsuarioResponseDTO usuarioResponseDTO=new UsuarioResponseDTO(
@@ -115,7 +104,8 @@ public class GoogleAuthService {
                 null, // loSigo
                 usuario.getCarrera() != null ? usuario.getCarrera().getId() : 
                     (usuario.getGrupo() != null && usuario.getGrupo().getCarrera() != null ? usuario.getGrupo().getCarrera().getId() : null),
-                usuario.getGrupo() != null ? usuario.getGrupo().getId() : null
+                usuario.getGrupo() != null ? usuario.getGrupo().getId() : null,
+                usuario.getStatus()
         );
         return new LoginResponseDTO(token, usuarioResponseDTO);
     }

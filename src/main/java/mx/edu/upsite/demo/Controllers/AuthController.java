@@ -21,7 +21,7 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<LoginResponseDTO> loginWithGoogle(@RequestBody Map<String, String> body) {
         try {
-            LoginResponseDTO response = googleAuthService.loginWithGoogle(body.get("token"));
+            LoginResponseDTO response = googleAuthService.loginConGoogle(body.get("token"));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

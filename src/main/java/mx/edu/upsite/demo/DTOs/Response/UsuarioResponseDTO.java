@@ -16,6 +16,7 @@ public record UsuarioResponseDTO(
         Long siguiendoCount,
         Boolean loSigo,
         Integer idCarrera, // Nuevo campo
-        Integer idGrupo     // También id de grupo para facilitar filtrado
+        Integer idGrupo,     // También id de grupo para facilitar filtrado
+        Integer status
 ) {
 }

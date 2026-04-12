@@ -73,6 +73,11 @@ public class UsuarioController {
         return ResponseEntity.ok("Usuario desactivado exitosamente");
     }
 
+    @PutMapping("/{id}/actualizar")
+    public ResponseEntity<UsuarioResponseDTO> actualizar(@PathVariable Integer id, @RequestBody UsuarioResponseDTO dto) {
+        return ResponseEntity.ok(usuarioService.actualizarUsuarioAdmin(id, dto));
+    }
+
     @PostMapping("/{id}/follow")
     public ResponseEntity<Void> seguir(@PathVariable Integer id) {
         Usuario logueado = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

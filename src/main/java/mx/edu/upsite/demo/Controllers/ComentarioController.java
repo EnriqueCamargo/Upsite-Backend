@@ -25,6 +25,13 @@ public class ComentarioController {
         return ResponseEntity.ok(comentarioService.getComentariosByPublicacion(id, usuario.getId()));
     }
 
+    @GetMapping("/comentarios/{idComentario}/respuestas")
+    public ResponseEntity<List<ComentarioResponseDTO>> getRespuestas(@PathVariable Integer idComentario) {
+        Usuario usuario = (Usuario) SecurityContextHolder
+                .getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(comentarioService.getRespuestas(idComentario, usuario.getId()));
+    }
+
     @PostMapping("/{id}/comentarios")
     public ResponseEntity<ComentarioResponseDTO> crear(
             @PathVariable Integer id,

@@ -1,10 +1,9 @@
 package mx.edu.upsite.demo.Services;
 
 import lombok.RequiredArgsConstructor;
-import mx.edu.upsite.demo.DTOs.*;
 import mx.edu.upsite.demo.DTOs.Request.MultimediaPublicacionRequestDTO;
 import mx.edu.upsite.demo.DTOs.Request.PublicacionRequestDTO;
-import mx.edu.upsite.demo.DTOs.Response.PublicacionResponseDTO;
+import mx.edu.upsite.demo.DTOs.Response.*;
 import mx.edu.upsite.demo.Entities.*;
 import mx.edu.upsite.demo.Enums.Importancia;
 import mx.edu.upsite.demo.Enums.Moderacion;
@@ -33,10 +32,10 @@ public class PublicacionService {
     private final LikePublicacionRepository likePublicacionRepository;
     private final ComentarioRepository comentarioRepository;
     private final MultimediaPublicacionService multimediaPublicacionService;
-    private final NotificacionService notificacionService; // Tu servicio
-    private final CarreraRepository carreraRepository;     // De Alvaro
-    private final GrupoRepository grupoRepository;         // De Alvaro
-    private final ModerationService moderationService;     // De Alvaro
+    private final NotificacionService notificacionService;
+    private final CarreraRepository carreraRepository;
+    private final GrupoRepository grupoRepository;
+    private final ModerationService moderationService;
 
     @Transactional(readOnly = true)
     public List<PublicacionResponseDTO> getFeed(Integer carreraFiltro, Importancia importanciaFiltro, Integer idUsuario, Boolean esGlobalFiltro, Integer grupoFiltro, int page, int size) {
@@ -82,14 +81,12 @@ public class PublicacionService {
             throw new BadRequestException("Un usuario desactivado no puede realizar publicaciones.");
         }
 
-        // VALIDACIONES DE ROL (Lógica de Alvaro)
         validarReglasPorRol(usuario, dto);
 
         if (dto.texto() == null || dto.texto().trim().isEmpty()) {
             throw new BadRequestException("El contenido de la publicación es obligatorio.");
         }
 
-        // MODERACIÓN (Lógica de Alvaro)
         boolean esApropiado = moderationService.esContenidoApropiado(dto.texto().trim(), null);
 
         Publicacion publicacion = (idPublicacion != null)
@@ -101,7 +98,6 @@ public class PublicacionService {
         publicacion.setImportancia(dto.importancia());
         publicacion.setEsGlobal(dto.esGlobal());
 
-        // GESTIÓN DE ALCANCE (Carreras/Grupos)
         configurarAlcance(publicacion, dto);
 
         if (esApropiado) {
@@ -114,12 +110,10 @@ public class PublicacionService {
 
         Publicacion guardada = publicacionRepository.save(publicacion);
 
-        // NOTIFICACIONES (Tu lógica)
         if (esApropiado && (usuario.getRol() != Rol.ESTUDIANTE)) {
             procesarNotificacionesAvisos(guardada, usuario);
         }
 
-        // MULTIMEDIA
         if (dto.multimedia() != null && !dto.multimedia().isEmpty()) {
             for (MultimediaPublicacionRequestDTO mediaDto : dto.multimedia()) {
                 multimediaPublicacionService.subirMultimedia(guardada.getId(), mediaDto, idUsuario);
@@ -147,6 +141,7 @@ public class PublicacionService {
     private void configurarAlcance(Publicacion pub, PublicacionRequestDTO dto) {
         if (!dto.esGlobal() && dto.idsCarreras() != null && !dto.idsCarreras().isEmpty()) {
             List<Carrera> carreras = carreraRepository.findAllById(dto.idsCarreras());
+            if (carreras.size() != dto.idsCarreras().size()) throw new BadRequestException("Carreras no válidas.");
             pub.setTargetCarreras(carreras);
 
             if (dto.idsGrupos() != null && !dto.idsGrupos().isEmpty()) {
@@ -182,17 +177,59 @@ public class PublicacionService {
     }
 
     private PublicacionResponseDTO toDTO(Publicacion p, Integer idUsuario) {
-        // Implementación de mapeo a DTO (se mantiene igual a tu versión anterior)
-        // ... (el código de toDTO que ya tenías)
-        return null; // Reemplazar con tu lógica de mapeo
+        List<MultimediaPublicacionResponseDTO> multimedia = (p.getMultimedia() != null)
+                ? p.getMultimedia().stream()
+                  .map(m -> new MultimediaPublicacionResponseDTO(m.getId(), m.getRuta(), m.getTipo()))
+                  .toList() : List.of();
+
+        UsuarioResponseDTO usuarioDTO = null;
+        if (p.getUsuario() != null) {
+            Usuario u = p.getUsuario();
+            usuarioDTO = new UsuarioResponseDTO(
+                    u.getId(), u.getNombres(), u.getApellidos(),
+                    (u.getGrupo() != null) ? u.getGrupo().getNombre() : null,
+                    (u.getGrupo() != null && u.getGrupo().getCarrera() != null) ? u.getGrupo().getCarrera().getNombre() : null,
+                    u.getFotoPerfil(), u.getEmail(), u.getRol(), u.getMatricula(),
+                    null, null, null,
+                    (u.getCarrera() != null) ? u.getCarrera().getId() : null,
+                    (u.getGrupo() != null) ? u.getGrupo().getId() : null,
+                    u.getStatus()
+            );
+        }
+
+        Long totalLikes = likePublicacionRepository.countByIdIdPublicacion(p.getId());
+        Boolean meGusta = (idUsuario != null) && likePublicacionRepository.existsByIdIdPublicacionAndIdIdUsuario(p.getId(), idUsuario);
+        Long totalComentarios = comentarioRepository.countByPublicacionIdAndStatus(p.getId(), 1);
+
+        List<CarreraResponseDTO> carreras = p.getTargetCarreras().stream()
+                .map(c -> new CarreraResponseDTO(c.getId(), c.getNombre()))
+                .toList();
+
+        List<GrupoResponseDTO> grupos = p.getGruposDestino().stream()
+                .map(g -> new GrupoResponseDTO(g.getId(), g.getNombre(), g.getCarrera().getNombre()))
+                .toList();
+
+        return new PublicacionResponseDTO(
+                p.getId(), p.getTexto(), p.getImportancia(), multimedia, usuarioDTO,
+                totalLikes != null ? totalLikes : 0L,
+                totalComentarios != null ? totalComentarios : 0L,
+                meGusta, carreras, grupos, p.getFechaPublicacion()
+        );
     }
 
     @Transactional
     public void eliminarPublicacion(Integer idPublicacion, Integer idUsuarioLogueado) {
-        Publicacion publicacion = publicacionRepository.findById(idPublicacion)
-                .orElseThrow(() -> new ResourceNotFoundException("No se encontró la publicación."));
-        publicacion.setStatus(0);
-        publicacion.setFechaEliminacion(OffsetDateTime.now());
-        publicacionRepository.save(publicacion);
+        Publicacion p = publicacionRepository.findById(idPublicacion)
+                .orElseThrow(() -> new ResourceNotFoundException("No encontrada."));
+        p.setStatus(0);
+        p.setFechaEliminacion(OffsetDateTime.now());
+        publicacionRepository.save(p);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicacionResponseDTO> getPublicacionesByAutorId(Integer idAutor, Integer idUsuarioLogueado, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return publicacionRepository.findByUsuarioIdAndStatusOrderByIdDesc(idAutor, 1, pageable)
+                .stream().map(p -> toDTO(p, idUsuarioLogueado)).toList();
     }
 }

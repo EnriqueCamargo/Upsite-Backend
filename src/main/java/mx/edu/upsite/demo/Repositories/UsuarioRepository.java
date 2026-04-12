@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface UsuarioRepository extends JpaRepository <Usuario, Integer> {
     Optional<Usuario> findByGoogleId(String googleId);
+    Optional<Usuario> findByEmail(String email);
     @Query("SELECT u FROM Usuario u WHERE " +
             "LOWER(CONCAT(u.nombres, ' ', u.apellidos)) LIKE LOWER(CONCAT('%', :criterio, '%')) OR " +
             "u.matricula LIKE %:criterio%")

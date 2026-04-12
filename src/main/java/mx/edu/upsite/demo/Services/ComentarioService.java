@@ -127,9 +127,18 @@ public class ComentarioService {
         likeComentarioRepository.deleteByIdIdComentarioAndIdIdUsuario(idComentario, idUsuario);
     }
 
+    @Transactional(readOnly = true)
+    public List<ComentarioResponseDTO> getRespuestas(Integer idPadre, Integer idUsuario) {
+        return comentarioRepository.findByPadreIdAndStatus(idPadre, 1)
+                .stream()
+                .map(c -> toDTO(c, idUsuario))
+                .toList();
+    }
+
     private ComentarioResponseDTO toDTO(Comentario c, Integer idUsuario) {
         Long totalLikes = likeComentarioRepository.countByIdIdComentario(c.getId());
         Boolean meGusta = likeComentarioRepository.existsByIdIdComentarioAndIdIdUsuario(c.getId(), idUsuario);
+        Long totalRespuestas = comentarioRepository.countByPadreIdAndStatus(c.getId(), 1);
 
         // Blindaje de Nulos en el mapeo
         return new ComentarioResponseDTO(
@@ -143,7 +152,8 @@ public class ComentarioService {
                 c.getPadre() != null ? c.getPadre().getId() : null,
                 totalLikes,
                 meGusta,
-                c.getUsuario() != null ? c.getUsuario().getId() : null
+                c.getUsuario() != null ? c.getUsuario().getId() : null,
+                totalRespuestas
         );
     }
 }

@@ -144,6 +144,16 @@ public class PublicacionService {
             }
         }
 
+        // REGLA: Docentes no pueden publicar URGENTES y Avisos no pueden ser globales
+        if (usuario.getRol() == Rol.DOCENTE) {
+            if (dto.importancia() == Importancia.AVISO_IMPORTANTE) {
+                throw new BadRequestException("Los docentes no tienen permisos para realizar publicaciones urgentes.");
+            }
+            if (dto.importancia() == Importancia.AVISO && dto.esGlobal()) {
+                throw new BadRequestException("Los avisos creados por docentes deben estar dirigidos a una carrera o grupo específico y no pueden ser globales.");
+            }
+        }
+
         if (dto.texto() == null || dto.texto().trim().isEmpty()) {
             throw new BadRequestException("El contenido de la publicación es obligatorio.");
         }

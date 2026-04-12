@@ -39,7 +39,7 @@ public class PublicacionController {
             @RequestParam(required = false) Boolean esGlobal,
             @RequestParam(required = false) Integer grupo,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "5") int size) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(publicacionService.getFeed(carrera, importancia, usuario.getId(), esGlobal, grupo, page, size));
     }
@@ -48,7 +48,7 @@ public class PublicacionController {
     public ResponseEntity<List<PublicacionResponseDTO>> getByAutor(
             @PathVariable Integer idAutor,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "5") int size) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(publicacionService.getPublicacionesByAutorId(idAutor, usuario.getId(), page, size));
     }

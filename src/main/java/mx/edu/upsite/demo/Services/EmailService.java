@@ -15,7 +15,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Async // Crucial para que el usuario no espere a que se envíe el mail
+    @Async
     public void enviarNotificacion(NotificacionRequestDTO dto) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -24,24 +24,24 @@ public class EmailService {
             helper.setTo(dto.destinatarioEmail());
             helper.setSubject(dto.asunto());
 
-            // Construcción del HTML para que se vea profesional en Mazatlán
+            // Eliminamos el botón <a> y el último %s
             String htmlContent = String.format("""
-                <div style='font-family: Arial, sans-serif; border: 1px solid #ddd; padding: 20px;'>
-                    <h2 style='color: #2c3e50;'>%s</h2>
-                    <p>%s</p>
-                    <div style='background: #f9f9f9; padding: 15px; border-radius: 5px;'>
-                        <strong>Tipo:</strong> %s
-                    </div>
-                    <br>
-                    <a href='%s' style='background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
-                        Ver en UPSITE
-                    </a>
-                </div>
-                """,
+                            <div style='font-family: Arial, sans-serif; border: 1px solid #ddd; padding: 20px;'>
+                                <h2 style='color: #2c3e50;'>%s</h2>
+                                <p>%s</p>
+                                <div style='background: #f9f9f9; padding: 15px; border-radius: 5px;'>
+                                    <strong>Tipo:</strong> %s
+                                </div>
+                                <br>
+                                <p style='color: #7f8c8d; font-size: 12px;'>
+                                    Ingresa a la plataforma para revisar los detalles de esta notificación.
+                                </p>
+                            </div>
+                            """,
                     dto.tituloCuerpo(),
                     dto.mensajeCuerpo(),
-                    dto.tipoNotificacion(),
-                    dto.urlAccion()
+                    dto.tipoNotificacion()
+                    // Ya no pasamos dto.urlAccion() porque quitamos el %s
             );
 
             helper.setText(htmlContent, true);
@@ -51,5 +51,4 @@ public class EmailService {
             throw new RuntimeException("Error al enviar el correo institucional: " + e.getMessage());
         }
     }
-
 }

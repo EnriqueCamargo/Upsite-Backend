@@ -19,9 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,10 +49,77 @@ public class PublicacionService {
         String impStr = (importanciaFiltro != null) ? importanciaFiltro.name() : null;
 
         Pageable pageable = PageRequest.of(page, size);
-        return publicacionRepository.findFeed(carreraUsuario, grupoUsuario, idUsuario, carreraFiltro, impStr, esPersonal, esGlobalFiltro, grupoFiltro, pageable)
-                .stream()
-                .map(p -> toDTO(p, idUsuario))
+        List<Publicacion> publicaciones = publicacionRepository.findFeed(carreraUsuario, grupoUsuario, idUsuario, carreraFiltro, impStr, esPersonal, esGlobalFiltro, grupoFiltro, pageable);
+        
+        return convertToDTOList(publicaciones, idUsuario);
+    }
+
+    private List<PublicacionResponseDTO> convertToDTOList(List<Publicacion> publicaciones, Integer idUsuario) {
+        if (publicaciones.isEmpty()) return List.of();
+
+        List<Integer> ids = publicaciones.stream().map(Publicacion::getId).toList();
+
+        // Bulk fetch likes count
+        Map<Integer, Long> likesMap = likePublicacionRepository.countLikesForPublicaciones(ids)
+                .stream().collect(Collectors.toMap(o -> (Integer) o[0], o -> (Long) o[1]));
+
+        // Bulk fetch comments count
+        Map<Integer, Long> commentsMap = comentarioRepository.countByPublicacionIdsAndStatus(ids)
+                .stream().collect(Collectors.toMap(o -> (Integer) o[0], o -> (Long) o[1]));
+
+        // Bulk fetch if liked by current user
+        Set<Integer> likedSet = (idUsuario != null) 
+                ? new HashSet<>(likePublicacionRepository.findLikedByUsuario(idUsuario, ids)) 
+                : Set.of();
+
+        return publicaciones.stream()
+                .map(p -> toDTO(p, idUsuario, likesMap, commentsMap, likedSet))
                 .toList();
+    }
+
+    private PublicacionResponseDTO toDTO(Publicacion p, Integer idUsuario, Map<Integer, Long> likesMap, Map<Integer, Long> commentsMap, Set<Integer> likedSet) {
+        List<MultimediaPublicacionResponseDTO> multimedia = (p.getMultimedia() != null)
+                ? p.getMultimedia().stream()
+                  .map(m -> new MultimediaPublicacionResponseDTO(m.getId(), m.getRuta(), m.getTipo()))
+                  .toList() : List.of();
+
+        UsuarioResponseDTO usuarioDTO = null;
+        if (p.getUsuario() != null) {
+            Usuario u = p.getUsuario();
+            usuarioDTO = new UsuarioResponseDTO(
+                    u.getId(), u.getNombres(), u.getApellidos(),
+                    (u.getGrupo() != null) ? u.getGrupo().getNombre() : null,
+                    (u.getGrupo() != null && u.getGrupo().getCarrera() != null) ? u.getGrupo().getCarrera().getNombre() : null,
+                    u.getFotoPerfil(), u.getEmail(), u.getRol(), u.getMatricula(),
+                    null, null, null,
+                    (u.getCarrera() != null) ? u.getCarrera().getId() : null,
+                    (u.getGrupo() != null) ? u.getGrupo().getId() : null,
+                    u.getStatus()
+            );
+        }
+
+        Long totalLikes = likesMap.getOrDefault(p.getId(), 0L);
+        Boolean meGusta = likedSet.contains(p.getId());
+        Long totalComentarios = commentsMap.getOrDefault(p.getId(), 0L);
+
+        List<CarreraResponseDTO> carreras = (p.getTargetCarreras() != null) ? p.getTargetCarreras().stream()
+                .map(c -> new CarreraResponseDTO(c.getId(), c.getNombre()))
+                .toList() : List.of();
+
+        List<GrupoResponseDTO> grupos = (p.getGruposDestino() != null) ? p.getGruposDestino().stream()
+                .map(g -> new GrupoResponseDTO(g.getId(), g.getNombre(), (g.getCarrera() != null) ? g.getCarrera().getNombre() : null))
+                .toList() : List.of();
+
+        return new PublicacionResponseDTO(
+                p.getId(), p.getTexto(), p.getImportancia(), multimedia, usuarioDTO,
+                totalLikes,
+                totalComentarios,
+                meGusta, carreras, grupos, p.getFechaPublicacion()
+        );
+    }
+
+    private PublicacionResponseDTO toDTO(Publicacion p, Integer idUsuario) {
+        return convertToDTOList(List.of(p), idUsuario).get(0);
     }
 
     public PublicacionResponseDTO crear(PublicacionRequestDTO dto, Integer idUsuario) {
@@ -169,52 +235,7 @@ public class PublicacionService {
         }
 
         String mensaje = "El " + autor.getRol() + " " + autor.getNombres() + " ha publicado un aviso importante.";
-        for (Usuario receptor : destinatarios) {
-            if (!receptor.getId().equals(autor.getId())) {
-                notificacionService.crearNotificacion(receptor, autor, TipoNotificacion.AVISO, mensaje, pub, true);
-            }
-        }
-    }
-
-    private PublicacionResponseDTO toDTO(Publicacion p, Integer idUsuario) {
-        List<MultimediaPublicacionResponseDTO> multimedia = (p.getMultimedia() != null)
-                ? p.getMultimedia().stream()
-                  .map(m -> new MultimediaPublicacionResponseDTO(m.getId(), m.getRuta(), m.getTipo()))
-                  .toList() : List.of();
-
-        UsuarioResponseDTO usuarioDTO = null;
-        if (p.getUsuario() != null) {
-            Usuario u = p.getUsuario();
-            usuarioDTO = new UsuarioResponseDTO(
-                    u.getId(), u.getNombres(), u.getApellidos(),
-                    (u.getGrupo() != null) ? u.getGrupo().getNombre() : null,
-                    (u.getGrupo() != null && u.getGrupo().getCarrera() != null) ? u.getGrupo().getCarrera().getNombre() : null,
-                    u.getFotoPerfil(), u.getEmail(), u.getRol(), u.getMatricula(),
-                    null, null, null,
-                    (u.getCarrera() != null) ? u.getCarrera().getId() : null,
-                    (u.getGrupo() != null) ? u.getGrupo().getId() : null,
-                    u.getStatus()
-            );
-        }
-
-        Long totalLikes = likePublicacionRepository.countByIdIdPublicacion(p.getId());
-        Boolean meGusta = (idUsuario != null) && likePublicacionRepository.existsByIdIdPublicacionAndIdIdUsuario(p.getId(), idUsuario);
-        Long totalComentarios = comentarioRepository.countByPublicacionIdAndStatus(p.getId(), 1);
-
-        List<CarreraResponseDTO> carreras = p.getTargetCarreras().stream()
-                .map(c -> new CarreraResponseDTO(c.getId(), c.getNombre()))
-                .toList();
-
-        List<GrupoResponseDTO> grupos = p.getGruposDestino().stream()
-                .map(g -> new GrupoResponseDTO(g.getId(), g.getNombre(), g.getCarrera().getNombre()))
-                .toList();
-
-        return new PublicacionResponseDTO(
-                p.getId(), p.getTexto(), p.getImportancia(), multimedia, usuarioDTO,
-                totalLikes != null ? totalLikes : 0L,
-                totalComentarios != null ? totalComentarios : 0L,
-                meGusta, carreras, grupos, p.getFechaPublicacion()
-        );
+        notificacionService.crearNotificacionesBulk(destinatarios, autor, TipoNotificacion.AVISO, mensaje, pub, true);
     }
 
     @Transactional
@@ -229,7 +250,7 @@ public class PublicacionService {
     @Transactional(readOnly = true)
     public List<PublicacionResponseDTO> getPublicacionesByAutorId(Integer idAutor, Integer idUsuarioLogueado, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return publicacionRepository.findByUsuarioIdAndStatusOrderByIdDesc(idAutor, 1, pageable)
-                .stream().map(p -> toDTO(p, idUsuarioLogueado)).toList();
+        List<Publicacion> publicaciones = publicacionRepository.findByUsuarioIdAndStatusOrderByIdDesc(idAutor, 1, pageable).getContent();
+        return convertToDTOList(publicaciones, idUsuarioLogueado);
     }
 }

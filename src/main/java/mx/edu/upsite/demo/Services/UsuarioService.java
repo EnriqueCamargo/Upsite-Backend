@@ -12,12 +12,12 @@ import mx.edu.upsite.demo.Exceptions.ResourceNotFoundException;
 import mx.edu.upsite.demo.Repositories.CarreraRepository;
 import mx.edu.upsite.demo.Repositories.GrupoRepository;
 import mx.edu.upsite.demo.Repositories.UsuarioRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +26,10 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final GrupoRepository grupoRepository;
     private final CarreraRepository carreraRepository;
+
+    public List<UsuarioResponseDTO> getAllUsuarios(Pageable pageable) {
+        return usuarioRepository.findAll(pageable).stream().map(usuario -> mapearADto(usuario, null)).toList();
+    }
 
     public List<UsuarioResponseDTO> getAllUsuarios() {
         return usuarioRepository.findAll().stream().map(usuario -> mapearADto(usuario, null)).toList();
@@ -165,8 +169,8 @@ public class UsuarioService {
                 .toList();
     }
 
-    public List<UsuarioResponseDTO> buscarUsuario(String criterio, Integer idLogueado) {
-        return usuarioRepository.buscarUsuario(criterio).stream()
+    public List<UsuarioResponseDTO> buscarUsuario(String criterio, Integer idLogueado, Pageable pageable) {
+        return usuarioRepository.buscarUsuario(criterio, pageable).stream()
                 .map(u -> {
                     boolean loSigo = (idLogueado != null) &&
                             (u.getSeguidores() != null && u.getSeguidores().stream()
@@ -174,6 +178,10 @@ public class UsuarioService {
                     return mapearADto(u, loSigo);
                 })
                 .toList();
+    }
+
+    public List<UsuarioResponseDTO> buscarUsuario(String criterio, Integer idLogueado) {
+        return buscarUsuario(criterio, idLogueado, Pageable.unpaged());
     }
 
     public List<UsuarioResponseDTO> buscarUsuarioPorGrupo(String grupoNombre) {

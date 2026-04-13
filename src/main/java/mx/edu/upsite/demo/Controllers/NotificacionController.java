@@ -23,10 +23,12 @@ public class NotificacionController {
 
 
     @GetMapping
-    public ResponseEntity<List<NotificacionResponseDTO>> getMisNotificaciones() {
+    public ResponseEntity<List<NotificacionResponseDTO>> getMisNotificaciones(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         // Extraemos al usuario del contexto de seguridad (como en tus otros controladores)
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return ResponseEntity.ok(notificacionService.listarNotificaciones(usuario.getId()));
+        return ResponseEntity.ok(notificacionService.listarNotificaciones(usuario.getId(), page, size));
     }
 
 

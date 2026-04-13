@@ -51,6 +51,14 @@ public class GrupoService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public List<GrupoResponseDTO> getAllByCarreraIds(List<Integer> ids){
+        return grupoRepository.findAllByCarreraIdIn(ids).stream()
+                .map(this::toDto)
+                .sorted(this::compararGrupos)
+                .toList();
+    }
+
     private int compararGrupos(GrupoResponseDTO g1, GrupoResponseDTO g2) {
         try {
             String[] s1 = g1.nombre().split("-");

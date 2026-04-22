@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -58,10 +59,15 @@ public class GoogleAuthService {
         String fotoPerfil = (String) payload.get("picture");
 
         String apellidoFormato=apellidos.toLowerCase().trim();
+        String apellidoFormato2=apellidos.toLowerCase().trim();
 
-        if(apellidoFormato.contains(" ")) apellidoFormato=apellidoFormato.split(" ")[0];
+        if(apellidoFormato.contains(" ")){
+            apellidoFormato=apellidoFormato.split(" ")[0];
+            apellidoFormato2=apellidoFormato.split(" ")[1].substring(0,1);
+        }
 
         String formatoDocente = nombres.toLowerCase().substring(0,1)+apellidoFormato;
+        String formatoDocente2 = nombres.toLowerCase().substring(0,1)+apellidoFormato+apellidoFormato2;
 
         // Intentar buscar usuario por email, si no existe crearlo
         Usuario usuario = usuarioRepository.findByEmail(email)
@@ -69,7 +75,7 @@ public class GoogleAuthService {
                     // Generar matrícula a partir del correo (ej: 2021030612)
                     String matricula = email.split("@")[0];
 
-                    if(matricula.equals(formatoDocente)){
+                    if(matricula.equals(formatoDocente) || matricula.equals(formatoDocente2)){
                         return Usuario.builder()
                                 .email(email)
                                 .googleId(googleId)

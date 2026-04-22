@@ -57,23 +57,45 @@ public class GoogleAuthService {
         String apellidos = (String) payload.get("family_name");
         String fotoPerfil = (String) payload.get("picture");
 
+        String apellidoFormato=apellidos.toLowerCase().trim();
+
+        if(apellidoFormato.contains(" ")) apellidoFormato=apellidoFormato.split(" ")[0];
+
+        String formatoDocente = nombres.toLowerCase().substring(0,1)+apellidoFormato;
+
         // Intentar buscar usuario por email, si no existe crearlo
         Usuario usuario = usuarioRepository.findByEmail(email)
                 .orElseGet(() -> {
                     // Generar matrícula a partir del correo (ej: 2021030612)
                     String matricula = email.split("@")[0];
-                    return Usuario.builder()
-                            .email(email)
-                            .googleId(googleId)
-                            .nombres(nombres)
-                            .apellidos(apellidos)
-                            .fotoPerfil(fotoPerfil)
-                            .matricula(matricula)
-                            .rol(Rol.ESTUDIANTE)
-                            .status(1)
-                            .siguiendo(new java.util.ArrayList<>())
-                            .seguidores(new java.util.ArrayList<>())
-                            .build();
+
+                    if(matricula.equals(formatoDocente)){
+                        return Usuario.builder()
+                                .email(email)
+                                .googleId(googleId)
+                                .nombres(nombres)
+                                .apellidos(apellidos)
+                                .fotoPerfil(fotoPerfil)
+                                .matricula(matricula)
+                                .rol(Rol.DOCENTE)
+                                .status(1)
+                                .siguiendo(new java.util.ArrayList<>())
+                                .seguidores(new java.util.ArrayList<>())
+                                .build();
+                    }else{
+                        return Usuario.builder()
+                                .email(email)
+                                .googleId(googleId)
+                                .nombres(nombres)
+                                .apellidos(apellidos)
+                                .fotoPerfil(fotoPerfil)
+                                .matricula(matricula)
+                                .rol(Rol.ESTUDIANTE)
+                                .status(1)
+                                .siguiendo(new java.util.ArrayList<>())
+                                .seguidores(new java.util.ArrayList<>())
+                                .build();
+                    }
                 });
 
         // Actualizar datos de Google por si cambiaron
